@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Main Book Cover Shadow / Base -->
+    <path
+        android:fillColor="#E0E6ED"
+        android:pathData="M31,30 C31,27.8 32.8,26 35,26 L73,26 C75.2,26 77,27.8 77,30 L77,78 C77,80.2 75.2,82 73,82 L35,82 C32.8,82 31,80.2 31,78 Z" />
+    <!-- Cream / Ruled Paper Pages -->
+    <path
+        android:fillColor="#FAF6ED"
+        android:pathData="M34,29 L74,29 L74,79 L34,79 Z" />
+    <!-- Book Spine Margin / Left Margin Line (Red) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#E57373"
+        android:strokeWidth="1.5"
+        android:pathData="M43,29 L43,79" />
+    <!-- Ruled Lines (Notebook Blue) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#90A4AE"
+        android:strokeWidth="1.5"
+        android:pathData="M46,37 L70,37" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#90A4AE"
+        android:strokeWidth="1.5"
+        android:pathData="M46,45 L70,45" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#90A4AE"
+        android:strokeWidth="1.5"
+        android:pathData="M46,53 L70,53" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#90A4AE"
+        android:strokeWidth="1.5"
+        android:pathData="M46,61 L70,61" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#90A4AE"
+        android:strokeWidth="1.5"
+        android:pathData="M46,69 L70,69" />
+    <!-- Serial Number column tick / dots -->
+    <path
+        android:fillColor="#546E7A"
+        android:pathData="M37.5,36.5 A1,1 0 1,0 39.5,36.5 A1,1 0 1,0 37.5,36.5" />
+    <path
+        android:fillColor="#546E7A"
+        android:pathData="M37.5,44.5 A1,1 0 1,0 39.5,44.5 A1,1 0 1,0 37.5,44.5" />
+    <path
+        android:fillColor="#546E7A"
+        android:pathData="M37.5,52.5 A1,1 0 1,0 39.5,52.5 A1,1 0 1,0 37.5,52.5" />
+    <!-- Leather bookmark ribbon on top -->
+    <path
+        android:fillColor="#D32F2F"
+        android:pathData="M52,24 L56,24 L56,36 L54,34 L52,36 Z" />
+</vector>

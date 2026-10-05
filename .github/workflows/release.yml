@@ -1,0 +1,89 @@
+name: Build & Release Signed APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for the release (e.g., v1.0.1)'
+        required: true
+        default: 'v1.0.1'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Publish Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Ensure Keystore Exists
+        run: |
+          if [ ! -f "my-upload-key.jks" ]; then
+            echo "Generating release keystore for build..."
+            keytool -genkeypair -v -keystore my-upload-key.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass ruledregisterkey -keypass ruledregisterkey \
+              -dname "CN=RuledRegister, OU=Mobile, O=Amma, L=Bengaluru, ST=Karnataka, C=IN"
+          fi
+
+      - name: Build Release APK with R8
+        env:
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD || 'ruledregisterkey' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'ruledregisterkey' }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || 'upload' }}
+        run: |
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Prepare Release APK Asset
+        id: prepare_asset
+        run: |
+          RELEASE_TAG="${{ github.ref_name }}"
+          if [ -z "$RELEASE_TAG" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            RELEASE_TAG="${{ github.event.inputs.tag_name }}"
+          fi
+          
+          APK_SRC="app/build/outputs/apk/release/app-release.apk"
+          APK_DEST="ruled-register-${RELEASE_TAG}.apk"
+          
+          if [ -f "$APK_SRC" ]; then
+            cp "$APK_SRC" "$APK_DEST"
+            echo "apk_path=$APK_DEST" >> $GITHUB_OUTPUT
+            echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          else
+            echo "Error: Release APK not found at $APK_SRC"
+            exit 1
+          fi
+
+      - name: Publish GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.prepare_asset.outputs.release_tag }}"
+          APK="${{ steps.prepare_asset.outputs.apk_path }}"
+          
+          echo "Publishing release $TAG with asset $APK..."
+          gh release create "$TAG" "$APK" \
+            --title "Register Book $TAG" \
+            --generate-notes \
+            --draft=false \
+            --prerelease=false
