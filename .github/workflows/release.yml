@@ -38,8 +38,13 @@ jobs:
         run: chmod +x gradlew
 
       - name: Ensure Keystore Exists
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
         run: |
-          if [ ! -f "my-upload-key.jks" ]; then
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Restoring release keystore from secrets..."
+            echo "$KEYSTORE_BASE64" | base64 -d > my-upload-key.jks
+          elif [ ! -f "my-upload-key.jks" ]; then
             echo "Generating release keystore for build..."
             keytool -genkeypair -v -keystore my-upload-key.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000 \
               -storepass ruledregisterkey -keypass ruledregisterkey \
