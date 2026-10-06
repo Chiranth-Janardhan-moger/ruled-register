@@ -3,11 +3,11 @@ package com.chiranth7.regibook.features.lic.ui
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,6 +30,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CalendarToday
@@ -50,6 +51,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,6 +59,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
@@ -99,6 +103,14 @@ fun LicRegisterScreen(
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     var isSearchActive by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(isSearchActive) {
+        if (isSearchActive) {
+            kotlinx.coroutines.delay(100)
+            runCatching { focusRequester.requestFocus() }
+        }
+    }
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
@@ -141,134 +153,148 @@ fun LicRegisterScreen(
                 .statusBarsPadding()
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // Top Bar
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AnimatedVisibility(
-                        visible = !isSearchActive,
-                        enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
-                        exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start)
-                    ) {
-                        IconButton(
-                            onClick = { coroutineScope.launch { drawerState.open() } },
-                            modifier = Modifier
-                                .size(48.dp)
-                                .testTag("menu_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Menu,
-                                contentDescription = stringResource(R.string.menu),
-                                tint = inkColor,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-
-                    if (!isSearchActive) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-
-                    // Search input
-                    AnimatedVisibility(
-                        visible = isSearchActive,
-                        modifier = Modifier.weight(1f),
-                        enter = fadeIn() + expandHorizontally(expandFrom = Alignment.End),
-                        exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.End)
-                    ) {
+                AnimatedContent(
+                    targetState = isSearchActive,
+                    transitionSpec = {
+                        fadeIn(animationSpec = tween(200)) togetherWith
+                            fadeOut(animationSpec = tween(150))
+                    },
+                    label = "LicTopBarSearchTransition"
+                ) { searchActive ->
+                    if (searchActive) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(42.dp)
-                                .padding(end = 4.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = RoundedCornerShape(21.dp)
-                                )
-                                .padding(horizontal = 12.dp),
+                                .height(56.dp)
+                                .padding(horizontal = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = null,
-                                tint = secondaryInk,
-                                modifier = Modifier.size(18.dp)
-                            )
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            BasicTextField(
-                                value = searchQuery,
-                                onValueChange = { viewModel.updateSearchQuery(it) },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .testTag("search_input"),
-                                singleLine = true,
-                                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                    color = inkColor,
-                                    fontSize = 16.sp
-                                ),
-                                cursorBrush = SolidColor(inkColor),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                decorationBox = { innerTextField ->
-                                    Box(contentAlignment = Alignment.CenterStart) {
-                                        if (searchQuery.isEmpty()) {
-                                            Text(
-                                                text = stringResource(R.string.search_hint),
-                                                style = MaterialTheme.typography.bodyMedium.copy(
-                                                    color = secondaryInk.copy(alpha = 0.5f),
-                                                    fontSize = 15.sp
-                                                )
-                                            )
-                                        }
-                                        innerTextField()
-                                    }
-                                }
-                            )
-
                             IconButton(
                                 onClick = {
-                                    if (searchQuery.isNotEmpty()) {
-                                        viewModel.updateSearchQuery("")
-                                    } else {
-                                        isSearchActive = false
-                                    }
+                                    isSearchActive = false
+                                    viewModel.updateSearchQuery("")
                                 },
                                 modifier = Modifier
-                                    .size(36.dp)
-                                    .testTag("close_search_button")
+                                    .size(48.dp)
+                                    .testTag("back_search_button")
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = stringResource(R.string.cancel),
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.back),
+                                    tint = inkColor,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(42.dp)
+                                    .padding(end = 4.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.surfaceVariant,
+                                        shape = RoundedCornerShape(21.dp)
+                                    )
+                                    .padding(horizontal = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = null,
                                     tint = secondaryInk,
                                     modifier = Modifier.size(18.dp)
                                 )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                BasicTextField(
+                                    value = searchQuery,
+                                    onValueChange = { viewModel.updateSearchQuery(it) },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .focusRequester(focusRequester)
+                                        .testTag("search_input"),
+                                    singleLine = true,
+                                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                        color = inkColor,
+                                        fontSize = 16.sp
+                                    ),
+                                    cursorBrush = SolidColor(inkColor),
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                    decorationBox = { innerTextField ->
+                                        Box(contentAlignment = Alignment.CenterStart) {
+                                            if (searchQuery.isEmpty()) {
+                                                Text(
+                                                    text = stringResource(R.string.search_hint),
+                                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                                        color = secondaryInk.copy(alpha = 0.5f),
+                                                        fontSize = 15.sp
+                                                    )
+                                                )
+                                            }
+                                            innerTextField()
+                                        }
+                                    }
+                                )
+
+                                IconButton(
+                                    onClick = {
+                                        if (searchQuery.isNotEmpty()) {
+                                            viewModel.updateSearchQuery("")
+                                        } else {
+                                            isSearchActive = false
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .testTag("close_search_button")
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.cancel),
+                                        tint = secondaryInk,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
                             }
                         }
-                    }
-
-                    AnimatedVisibility(
-                        visible = !isSearchActive,
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
-                        IconButton(
-                            onClick = { isSearchActive = true },
+                    } else {
+                        Row(
                             modifier = Modifier
-                                .size(48.dp)
-                                .testTag("search_icon_button")
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .padding(horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = stringResource(R.string.search),
-                                tint = inkColor,
-                                modifier = Modifier.size(24.dp)
-                            )
+                            IconButton(
+                                onClick = { coroutineScope.launch { drawerState.open() } },
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .testTag("menu_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Menu,
+                                    contentDescription = stringResource(R.string.menu),
+                                    tint = inkColor,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.weight(1f))
+
+                            IconButton(
+                                onClick = { isSearchActive = true },
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .testTag("search_icon_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = stringResource(R.string.search),
+                                    tint = inkColor,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         }
                     }
                 }
