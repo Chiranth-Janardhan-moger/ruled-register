@@ -40,7 +40,7 @@
     <string name="margin_line_color">ಮಾರ್ಜಿನ್ ಲೈನ್ ಬಣ್ಣ</string>
     <string name="color_red">ಕೆಂಪು</string>
     <string name="color_black">ಕಪ್ಪು</string>
-    <string name="pigmi_register">೧. ಪಿಗ್ಮಿ ರಿಜಿಸ್ಟರ್</string>
+    <string name="pigmi_register">ಪಿಗ್ಮಿ</string>
     <string name="lic_register">೨. ಎಲ್.ಐ.ಸಿ</string>
     <string name="register_books">ಖಾತೆ ರಿಜಿಸ್ಟರ್‌ಗಳು</string>
     <string name="policy_number">ಪಾಲಿಸಿ ಸಂಖ್ಯೆ</string>
@@ -65,4 +65,10 @@
     <string name="status_overdue">ಪಾವತಿ ದಿನಾಂಕ ಮೀರಿದೆ</string>
     <string name="status_due_today">ಇಂದೇ ಪಾವತಿ ಬಾಕಿ ಇದೆ</string>
     <string name="share_whatsapp">WhatsApp</string>
+    <string name="profile">ಪ್ರೊಫೈಲ್</string>
+    <string name="agent_number">ಏಜೆಂಟ್ ಸಂಖ್ಯೆ</string>
+    <string name="agent_number_copied">ಏಜೆಂಟ್ ಸಂಖ್ಯೆಯನ್ನು ನಕಲಿಸಲಾಗಿದೆ</string>
+    <string name="agent_number_hint">ಏಜೆಂಟ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ</string>
+    <string name="tap_to_set_agent_number">ಏಜೆಂಟ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಲು ಒತ್ತಿರಿ</string>
+    <string name="copy">ನಕಲಿಸಿ</string>
 </resources>

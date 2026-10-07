@@ -56,16 +56,11 @@ fun NotebookPaperBackground(
     topStartOffset: Dp = 0.dp,
     showMarginLine: Boolean = true,
     showRuledLines: Boolean = true,
-    useBlackMarginLine: Boolean = false,
-    darkTheme: Boolean = com.chiranth7.regibook.ui.theme.LocalDarkTheme.current
+    useBlackMarginLine: Boolean = false
 ) {
-    val paperColor = if (darkTheme) NotebookPaperDark else Color(0xFFFFFFFF)
-    val ruledColor = if (darkTheme) NotebookRuledLineDark else NotebookRuledLineLight
-    val marginColor = if (useBlackMarginLine) {
-        if (darkTheme) NotebookMarginLineBlackDark else NotebookMarginLineBlackLight
-    } else {
-        if (darkTheme) NotebookMarginLineDark else NotebookMarginLineLight
-    }
+    val paperColor = Color(0xFFFFFFFF)
+    val ruledColor = NotebookRuledLineLight
+    val marginColor = if (useBlackMarginLine) NotebookMarginLineBlackLight else NotebookMarginLineLight
 
     Canvas(modifier = modifier.fillMaxSize()) {
         // 1. Draw warm paper fill

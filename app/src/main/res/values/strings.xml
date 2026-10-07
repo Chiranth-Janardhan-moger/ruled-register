@@ -39,7 +39,7 @@
     <string name="margin_line_color">Margin Line Color</string>
     <string name="color_red">Red</string>
     <string name="color_black">Black</string>
-    <string name="pigmi_register">1. Pigmi register</string>
+    <string name="pigmi_register">Pigmi</string>
     <string name="lic_register">2. Lic</string>
     <string name="register_books">Registers</string>
     <string name="policy_number">Policy Number</string>
@@ -64,4 +64,10 @@
     <string name="status_overdue">Payment Overdue</string>
     <string name="status_due_today">Payment Due Today</string>
     <string name="share_whatsapp">WhatsApp</string>
+    <string name="profile">Profile</string>
+    <string name="agent_number">Agent Number</string>
+    <string name="agent_number_copied">Agent number copied</string>
+    <string name="agent_number_hint">Enter agent number</string>
+    <string name="tap_to_set_agent_number">Tap to enter agent number</string>
+    <string name="copy">Copy</string>
 </resources>

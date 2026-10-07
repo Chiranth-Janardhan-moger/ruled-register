@@ -54,8 +54,6 @@ import com.chiranth7.regibook.BuildConfig
 import com.chiranth7.regibook.R
 import com.chiranth7.regibook.ui.components.NotebookPaperBackground
 import com.chiranth7.regibook.ui.components.NotebookRowHeight
-import com.chiranth7.regibook.util.AppThemeMode
-import com.chiranth7.regibook.util.MarginLineColor
 import com.chiranth7.regibook.util.SettingsManager
 import com.chiranth7.regibook.util.update.UpdateManager
 import com.chiranth7.regibook.util.update.UpdateState
@@ -71,8 +69,6 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val currentLang by settingsManager.currentLanguage.collectAsStateWithLifecycle()
-    val currentTheme by settingsManager.themeMode.collectAsStateWithLifecycle()
-    val currentMarginColor by settingsManager.marginLineColor.collectAsStateWithLifecycle()
     val updateState by updateManager.updateState.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
 
@@ -81,7 +77,10 @@ fun SettingsScreen(
     val inkColor = MaterialTheme.colorScheme.onBackground
     val secondaryInk = MaterialTheme.colorScheme.onSurfaceVariant
 
-    BackHandler {
+    var isNavigatingBack by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = !isNavigatingBack) {
+        isNavigatingBack = true
         onNavigateBack()
     }
 
@@ -246,7 +245,13 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
-                    onClick = onNavigateBack,
+                    onClick = {
+                        if (!isNavigatingBack) {
+                            isNavigatingBack = true
+                            onNavigateBack()
+                        }
+                    },
+                    enabled = !isNavigatingBack,
                     modifier = Modifier.testTag("back_button")
                 ) {
                     Icon(
@@ -338,68 +343,7 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Section 2: Theme
-                Text(
-                    text = stringResource(R.string.theme).uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = secondaryInk,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                SettingOptionRow(
-                    title = stringResource(R.string.theme_light),
-                    isSelected = currentTheme == AppThemeMode.LIGHT,
-                    onClick = { settingsManager.setThemeMode(AppThemeMode.LIGHT) },
-                    testTag = "theme_option_light"
-                )
-
-                SettingOptionRow(
-                    title = stringResource(R.string.theme_dark),
-                    isSelected = currentTheme == AppThemeMode.DARK,
-                    onClick = { settingsManager.setThemeMode(AppThemeMode.DARK) },
-                    testTag = "theme_option_dark"
-                )
-
-                SettingOptionRow(
-                    title = stringResource(R.string.theme_system),
-                    isSelected = currentTheme == AppThemeMode.SYSTEM,
-                    onClick = { settingsManager.setThemeMode(AppThemeMode.SYSTEM) },
-                    testTag = "theme_option_system"
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Section 3: Margin Line Color
-                Text(
-                    text = stringResource(R.string.margin_line_color).uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = secondaryInk,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                SettingOptionRow(
-                    title = stringResource(R.string.color_red),
-                    isSelected = currentMarginColor == MarginLineColor.RED,
-                    onClick = { settingsManager.setMarginLineColor(MarginLineColor.RED) },
-                    testTag = "margin_color_red"
-                )
-
-                SettingOptionRow(
-                    title = stringResource(R.string.color_black),
-                    isSelected = currentMarginColor == MarginLineColor.BLACK,
-                    onClick = { settingsManager.setMarginLineColor(MarginLineColor.BLACK) },
-                    testTag = "margin_color_black"
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Section 4: Language
+                // Section 2: Language
                 Text(
                     text = stringResource(R.string.language).uppercase(),
                     style = MaterialTheme.typography.labelSmall.copy(
@@ -426,7 +370,7 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Section 5: App Updates & About
+                // Section 3: App Updates & About
                 Text(
                     text = "ABOUT & UPDATES",
                     style = MaterialTheme.typography.labelSmall.copy(

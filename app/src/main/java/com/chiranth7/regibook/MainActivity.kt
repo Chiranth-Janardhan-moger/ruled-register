@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
@@ -22,7 +21,6 @@ import com.chiranth7.regibook.features.pigmi.viewmodel.PigmiViewModel
 import com.chiranth7.regibook.features.pigmi.viewmodel.PigmiViewModelFactory
 import com.chiranth7.regibook.ui.screens.RegisterNavGraph
 import com.chiranth7.regibook.ui.theme.RegisterBookTheme
-import com.chiranth7.regibook.util.AppThemeMode
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -35,16 +33,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val currentLang by app.settingsManager.currentLanguage.collectAsStateWithLifecycle()
-            val themeMode by app.settingsManager.themeMode.collectAsStateWithLifecycle()
-
-            val isSystemDark = isSystemInDarkTheme()
-            val isDarkTheme = remember(themeMode, isSystemDark) {
-                when (themeMode) {
-                    AppThemeMode.LIGHT -> false
-                    AppThemeMode.DARK -> true
-                    AppThemeMode.SYSTEM -> isSystemDark
-                }
-            }
 
             val locale = remember(currentLang) { Locale(currentLang) }
             val baseConfig = LocalConfiguration.current
@@ -58,7 +46,7 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(
                 LocalConfiguration provides configuration
             ) {
-                RegisterBookTheme(darkTheme = isDarkTheme) {
+                RegisterBookTheme(darkTheme = false) {
                     Surface(modifier = Modifier.fillMaxSize()) {
                         val navController = rememberNavController()
 

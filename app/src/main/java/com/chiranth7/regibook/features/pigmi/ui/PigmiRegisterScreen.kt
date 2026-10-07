@@ -68,7 +68,6 @@ import com.chiranth7.regibook.features.pigmi.viewmodel.PigmiViewModel
 import com.chiranth7.regibook.ui.components.NotebookMarginLeft
 import com.chiranth7.regibook.ui.components.NotebookPaperBackground
 import com.chiranth7.regibook.ui.components.NotebookRowHeight
-import com.chiranth7.regibook.util.MarginLineColor
 import com.chiranth7.regibook.util.RegisterType
 import com.chiranth7.regibook.util.SettingsManager
 import kotlinx.coroutines.launch
@@ -83,7 +82,6 @@ fun PigmiRegisterScreen(
 ) {
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
-    val marginLineColor by settingsManager.marginLineColor.collectAsStateWithLifecycle()
     var isSearchActive by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
 
@@ -138,8 +136,7 @@ fun PigmiRegisterScreen(
                 marginLineOffset = NotebookMarginLeft,
                 topStartOffset = 56.dp,
                 showMarginLine = true,
-                showRuledLines = false,
-                useBlackMarginLine = marginLineColor == MarginLineColor.BLACK
+                showRuledLines = false
             )
 
             Column(modifier = Modifier.fillMaxSize()) {
@@ -422,21 +419,6 @@ private fun PigmiRow(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
-
-            // Direct display of daily amount on the ruled page
-            if (account.dailyAmount.isNotBlank()) {
-                Text(
-                    text = account.dailyAmount,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 15.sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                    modifier = Modifier.padding(start = 6.dp)
-                )
-            }
         }
 
         Canvas(

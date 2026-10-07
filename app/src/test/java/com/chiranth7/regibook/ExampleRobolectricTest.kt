@@ -28,9 +28,13 @@ class ExampleRobolectricTest {
     val appName = context.getString(R.string.app_name)
     assertEquals("Register Book", appName)
     val pigmiString = context.getString(R.string.pigmi_register)
-    assertNotNull(pigmiString)
+    assertEquals("Pigmi", pigmiString)
     val licString = context.getString(R.string.lic_register)
     assertNotNull(licString)
+    val profileString = context.getString(R.string.profile)
+    assertEquals("Profile", profileString)
+    val agentNumberString = context.getString(R.string.agent_number)
+    assertEquals("Agent Number", agentNumberString)
     val policyNameString = context.getString(R.string.policy_name)
     assertNotNull(policyNameString)
     val totalYearsString = context.getString(R.string.total_years)
@@ -38,7 +42,7 @@ class ExampleRobolectricTest {
   }
 
   @Test
-  fun `settings manager toggles active register`() {
+  fun `settings manager toggles active register and handles agent number`() {
     val context = ApplicationProvider.getApplicationContext<Context>()
     val settingsManager = SettingsManager(context)
     assertEquals(RegisterType.PIGMI, settingsManager.activeRegisterType.value)
@@ -48,6 +52,10 @@ class ExampleRobolectricTest {
 
     settingsManager.setActiveRegisterType(RegisterType.PIGMI)
     assertEquals(RegisterType.PIGMI, settingsManager.activeRegisterType.value)
+
+    assertEquals("", settingsManager.agentNumber.value)
+    settingsManager.setAgentNumber("08492048")
+    assertEquals("08492048", settingsManager.agentNumber.value)
   }
 
   @Test

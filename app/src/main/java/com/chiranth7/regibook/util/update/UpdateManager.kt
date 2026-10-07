@@ -12,86 +12,101 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
-import java.util.concurrent.TimeUnit
+import java.net.HttpURLConnection
+import java.net.URI
 
 class UpdateManager(
     private val context: Context,
     private val githubOwner: String = "Chiranth-Janardhan-moger",
     private val githubRepo: String = "ruled-register"
 ) {
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
-
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
+
+    private fun openConnectionWithRedirects(urlString: String, maxRedirects: Int = 5): HttpURLConnection {
+        var url = URI(urlString).toURL()
+        var redirects = 0
+        while (redirects < maxRedirects) {
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                connectTimeout = 15000
+                readTimeout = 60000
+                setRequestProperty("User-Agent", "RuledRegister-Android-App")
+                instanceFollowRedirects = false
+            }
+            val status = conn.responseCode
+            if (status in 300..399) {
+                val location = conn.getHeaderField("Location") ?: throw Exception("Redirect missing Location header")
+                conn.disconnect()
+                url = URI(location).toURL()
+                redirects++
+            } else {
+                return conn
+            }
+        }
+        throw Exception("Too many redirects")
+    }
 
     suspend fun checkForUpdates(isManualCheck: Boolean = false) {
         _updateState.value = UpdateState.Checking
         withContext(Dispatchers.IO) {
+            var connection: HttpURLConnection? = null
             try {
-                val url = "https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest"
-                val request = Request.Builder()
-                    .url(url)
-                    .header("Accept", "application/vnd.github+json")
-                    .header("User-Agent", "RuledRegister-Android-App")
-                    .build()
+                val urlString = "https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest"
+                connection = openConnectionWithRedirects(urlString).apply {
+                    setRequestProperty("Accept", "application/vnd.github+json")
+                }
 
-                client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        if (response.code == 404) {
-                            _updateState.value = if (isManualCheck) UpdateState.UpToDate else UpdateState.Idle
-                            return@withContext
-                        }
-                        if (isManualCheck) {
-                            _updateState.value = UpdateState.Error("Failed to check for updates (HTTP ${response.code})")
-                        } else {
-                            _updateState.value = UpdateState.Idle
-                        }
+                val responseCode = connection.responseCode
+                if (responseCode !in 200..299) {
+                    if (responseCode == 404) {
+                        _updateState.value = if (isManualCheck) UpdateState.UpToDate else UpdateState.Idle
                         return@withContext
                     }
+                    if (isManualCheck) {
+                        _updateState.value = UpdateState.Error("Failed to check for updates (HTTP $responseCode)")
+                    } else {
+                        _updateState.value = UpdateState.Idle
+                    }
+                    return@withContext
+                }
 
-                    val responseBody = response.body?.string() ?: throw Exception("Empty response from GitHub")
-                    val json = JSONObject(responseBody)
-                    val tagName = json.optString("tag_name", "").removePrefix("v").trim()
-                    val body = json.optString("body", "Bug fixes and performance improvements")
-                    val assets = json.optJSONArray("assets")
+                val responseBody = connection.inputStream.bufferedReader().use { it.readText() }
+                val json = JSONObject(responseBody)
+                val tagName = json.optString("tag_name", "").removePrefix("v").trim()
+                val body = json.optString("body", "Bug fixes and performance improvements")
+                val assets = json.optJSONArray("assets")
 
-                    var apkUrl: String? = null
-                    var apkName = "ruled-register-update.apk"
+                var apkUrl: String? = null
+                var apkName = "ruled-register-update.apk"
 
-                    if (assets != null) {
-                        for (i in 0 until assets.length()) {
-                            val asset = assets.getJSONObject(i)
-                            val name = asset.optString("name", "")
-                            if (name.endsWith(".apk", ignoreCase = true)) {
-                                apkUrl = asset.optString("browser_download_url")
-                                apkName = name
-                                break
-                            }
+                if (assets != null) {
+                    for (i in 0 until assets.length()) {
+                        val asset = assets.getJSONObject(i)
+                        val name = asset.optString("name", "")
+                        if (name.endsWith(".apk", ignoreCase = true)) {
+                            apkUrl = asset.optString("browser_download_url")
+                            apkName = name
+                            break
                         }
                     }
+                }
 
-                    val currentVersion = BuildConfig.VERSION_NAME.removePrefix("v").trim()
+                val currentVersion = BuildConfig.VERSION_NAME.removePrefix("v").trim()
 
-                    if (apkUrl != null && isNewerVersion(tagName, currentVersion)) {
-                        _updateState.value = UpdateState.UpdateAvailable(
-                            UpdateInfo(
-                                versionName = tagName,
-                                releaseNotes = body,
-                                apkDownloadUrl = apkUrl,
-                                apkFileName = apkName
-                            )
+                if (apkUrl != null && isNewerVersion(tagName, currentVersion)) {
+                    _updateState.value = UpdateState.UpdateAvailable(
+                        UpdateInfo(
+                            versionName = tagName,
+                            releaseNotes = body,
+                            apkDownloadUrl = apkUrl,
+                            apkFileName = apkName
                         )
-                    } else {
-                        _updateState.value = if (isManualCheck) UpdateState.UpToDate else UpdateState.Idle
-                    }
+                    )
+                } else {
+                    _updateState.value = if (isManualCheck) UpdateState.UpToDate else UpdateState.Idle
                 }
             } catch (e: Exception) {
                 _updateState.value = if (isManualCheck) {
@@ -99,6 +114,8 @@ class UpdateManager(
                 } else {
                     UpdateState.Idle
                 }
+            } finally {
+                connection?.disconnect()
             }
         }
     }
@@ -106,35 +123,34 @@ class UpdateManager(
     suspend fun downloadAndInstall(info: UpdateInfo) {
         _updateState.value = UpdateState.Downloading(info, 0)
         withContext(Dispatchers.IO) {
+            var connection: HttpURLConnection? = null
             try {
                 val updatesDir = File(context.cacheDir, "updates").apply { mkdirs() }
                 val apkFile = File(updatesDir, info.apkFileName)
                 if (apkFile.exists()) apkFile.delete()
 
-                val request = Request.Builder().url(info.apkDownloadUrl).build()
-                client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        throw Exception("Download failed (HTTP ${response.code})")
-                    }
+                connection = openConnectionWithRedirects(info.apkDownloadUrl)
+                val responseCode = connection.responseCode
+                if (responseCode !in 200..299) {
+                    throw Exception("Download failed (HTTP $responseCode)")
+                }
 
-                    val body = response.body ?: throw Exception("Empty APK response body")
-                    val contentLength = body.contentLength()
-                    var bytesDownloaded = 0L
+                val contentLength = connection.contentLengthLong
+                var bytesDownloaded = 0L
 
-                    body.byteStream().use { input ->
-                        FileOutputStream(apkFile).use { output ->
-                            val buffer = ByteArray(8 * 1024)
-                            var read: Int
-                            while (input.read(buffer).also { read = it } != -1) {
-                                output.write(buffer, 0, read)
-                                bytesDownloaded += read
-                                if (contentLength > 0) {
-                                    val percent = ((bytesDownloaded * 100) / contentLength).toInt()
-                                    _updateState.value = UpdateState.Downloading(info, percent)
-                                }
+                connection.inputStream.use { input ->
+                    FileOutputStream(apkFile).use { output ->
+                        val buffer = ByteArray(8 * 1024)
+                        var read: Int
+                        while (input.read(buffer).also { read = it } != -1) {
+                            output.write(buffer, 0, read)
+                            bytesDownloaded += read
+                            if (contentLength > 0) {
+                                val percent = ((bytesDownloaded * 100) / contentLength).toInt()
+                                _updateState.value = UpdateState.Downloading(info, percent)
                             }
-                            output.flush()
                         }
+                        output.flush()
                     }
                 }
 
@@ -144,6 +160,8 @@ class UpdateManager(
                 }
             } catch (e: Exception) {
                 _updateState.value = UpdateState.Error(e.localizedMessage ?: "Failed to download update")
+            } finally {
+                connection?.disconnect()
             }
         }
     }

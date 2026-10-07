@@ -75,8 +75,8 @@ fun RegisterNavGraph(
         composable(Routes.PIGMI_ADD_EDIT) {
             AddEditPigmiScreen(
                 viewModel = pigmiViewModel,
-                onNavigateBack = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStackSafely(Routes.PIGMI_ADD_EDIT) },
+                onSaved = { navController.popBackStackSafely(Routes.PIGMI_ADD_EDIT) }
             )
         }
 
@@ -107,8 +107,8 @@ fun RegisterNavGraph(
         composable(Routes.LIC_ADD_EDIT) {
             AddEditLicScreen(
                 viewModel = licViewModel,
-                onNavigateBack = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStackSafely(Routes.LIC_ADD_EDIT) },
+                onSaved = { navController.popBackStackSafely(Routes.LIC_ADD_EDIT) }
             )
         }
 
@@ -121,7 +121,7 @@ fun RegisterNavGraph(
                 accountId = id,
                 viewModel = licViewModel,
                 settingsManager = settingsManager,
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = { navController.popBackStackSafely(Routes.LIC_DETAILS) },
                 onNavigateToEdit = { account ->
                     licViewModel.prepareEditAccount(account)
                     navController.navigate(Routes.LIC_ADD_EDIT)
@@ -144,8 +144,25 @@ fun RegisterNavGraph(
                     licViewModel.prepareNewAccount()
                     navController.navigate(Routes.LIC_ADD_EDIT)
                 },
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStackSafely(Routes.SETTINGS) }
             )
         }
     }
+}
+
+fun NavHostController.popBackStackSafely(expectedRoute: String? = null): Boolean {
+    val currentEntry = currentBackStackEntry ?: return false
+    if (currentEntry.lifecycle.currentState != androidx.lifecycle.Lifecycle.State.RESUMED) {
+        return false
+    }
+    if (previousBackStackEntry == null) {
+        return false
+    }
+    if (expectedRoute != null) {
+        val currentRoute = currentDestination?.route
+        if (currentRoute != expectedRoute && currentRoute?.substringBefore('/') != expectedRoute.substringBefore('/')) {
+            return false
+        }
+    }
+    return popBackStack()
 }
