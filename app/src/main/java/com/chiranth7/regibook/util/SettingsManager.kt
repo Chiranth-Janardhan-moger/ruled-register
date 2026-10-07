@@ -57,6 +57,50 @@ class SettingsManager(context: Context) {
         _agentNumber.value = trimmed
     }
 
+    // Policy Cloud Sync URL (e.g. GitHub Gist raw URL or online JSON)
+    private val _policySyncUrl = MutableStateFlow(
+        prefs.getString(KEY_POLICY_SYNC_URL, DEFAULT_POLICY_SYNC_URL) ?: DEFAULT_POLICY_SYNC_URL
+    )
+    val policySyncUrl: StateFlow<String> = _policySyncUrl.asStateFlow()
+
+    fun setPolicySyncUrl(url: String) {
+        val trimmed = url.trim()
+        prefs.edit().putString(KEY_POLICY_SYNC_URL, trimmed).apply()
+        _policySyncUrl.value = trimmed
+    }
+
+    // Last Sync Timestamp in millis
+    private val _lastSyncTimestamp = MutableStateFlow(
+        prefs.getLong(KEY_LAST_SYNC_TIMESTAMP, 0L)
+    )
+    val lastSyncTimestamp: StateFlow<Long> = _lastSyncTimestamp.asStateFlow()
+
+    fun setLastSyncTimestamp(timestamp: Long) {
+        prefs.edit().putLong(KEY_LAST_SYNC_TIMESTAMP, timestamp).apply()
+        _lastSyncTimestamp.value = timestamp
+    }
+
+    // Font Scale: 0.85f to 1.45f
+    private val _fontScale = MutableStateFlow(
+        prefs.getFloat(KEY_FONT_SCALE, DEFAULT_FONT_SCALE)
+    )
+    val fontScale: StateFlow<Float> = _fontScale.asStateFlow()
+
+    fun setFontScale(scale: Float) {
+        val clamped = scale.coerceIn(MIN_FONT_SCALE, MAX_FONT_SCALE)
+        val rounded = Math.round(clamped * 100f) / 100f
+        prefs.edit().putFloat(KEY_FONT_SCALE, rounded).apply()
+        _fontScale.value = rounded
+    }
+
+    fun increaseFontScale() {
+        setFontScale(_fontScale.value + FONT_SCALE_STEP)
+    }
+
+    fun decreaseFontScale() {
+        setFontScale(_fontScale.value - FONT_SCALE_STEP)
+    }
+
     fun getLocale(): Locale = Locale(_currentLanguage.value)
 
     companion object {
@@ -64,7 +108,17 @@ class SettingsManager(context: Context) {
         private const val KEY_LANGUAGE = "selected_language"
         private const val KEY_REGISTER_TYPE = "selected_register_type"
         private const val KEY_AGENT_NUMBER = "lic_agent_number"
+        private const val KEY_POLICY_SYNC_URL = "lic_policy_sync_url"
+        private const val KEY_LAST_SYNC_TIMESTAMP = "lic_last_sync_timestamp"
+        private const val KEY_FONT_SCALE = "app_font_scale"
+
         const val DEFAULT_AGENT_CODE = "LIC0246463V"
+        const val DEFAULT_POLICY_SYNC_URL = "https://raw.githubusercontent.com/Chiranth-Janardhan-moger/ruled-register/main/policies-sync.json"
+
+        const val DEFAULT_FONT_SCALE = 1.0f
+        const val MIN_FONT_SCALE = 0.85f
+        const val MAX_FONT_SCALE = 1.45f
+        const val FONT_SCALE_STEP = 0.10f
 
         const val LANG_ENGLISH = "en"
         const val LANG_KANNADA = "kn"

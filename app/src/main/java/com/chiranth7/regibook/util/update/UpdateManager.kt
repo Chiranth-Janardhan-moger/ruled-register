@@ -26,7 +26,11 @@ class UpdateManager(
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
-    private fun openConnectionWithRedirects(urlString: String, maxRedirects: Int = 5): HttpURLConnection {
+    private fun openConnectionWithRedirects(
+        urlString: String,
+        headers: Map<String, String> = emptyMap(),
+        maxRedirects: Int = 5
+    ): HttpURLConnection {
         var url = URI(urlString).toURL()
         var redirects = 0
         while (redirects < maxRedirects) {
@@ -34,6 +38,9 @@ class UpdateManager(
                 connectTimeout = 15000
                 readTimeout = 60000
                 setRequestProperty("User-Agent", "RuledRegister-Android-App")
+                for ((k, v) in headers) {
+                    setRequestProperty(k, v)
+                }
                 instanceFollowRedirects = false
             }
             val status = conn.responseCode
@@ -55,9 +62,10 @@ class UpdateManager(
             var connection: HttpURLConnection? = null
             try {
                 val urlString = "https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest"
-                connection = openConnectionWithRedirects(urlString).apply {
-                    setRequestProperty("Accept", "application/vnd.github+json")
-                }
+                connection = openConnectionWithRedirects(
+                    urlString = urlString,
+                    headers = mapOf("Accept" to "application/vnd.github+json")
+                )
 
                 val responseCode = connection.responseCode
                 if (responseCode !in 200..299) {

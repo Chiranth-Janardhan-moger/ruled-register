@@ -68,6 +68,7 @@ import com.chiranth7.regibook.features.pigmi.viewmodel.PigmiViewModel
 import com.chiranth7.regibook.ui.components.NotebookMarginLeft
 import com.chiranth7.regibook.ui.components.NotebookPaperBackground
 import com.chiranth7.regibook.ui.components.NotebookRowHeight
+import com.chiranth7.regibook.util.KannadaNameHelper
 import com.chiranth7.regibook.util.RegisterType
 import com.chiranth7.regibook.util.SettingsManager
 import kotlinx.coroutines.launch
@@ -82,6 +83,7 @@ fun PigmiRegisterScreen(
 ) {
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val currentLang by settingsManager.currentLanguage.collectAsStateWithLifecycle()
     var isSearchActive by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
 
@@ -328,7 +330,7 @@ fun PigmiRegisterScreen(
                                 items = accounts,
                                 key = { it.id }
                             ) { account ->
-                                PigmiRow(account = account)
+                                PigmiRow(account = account, currentLanguage = currentLang)
                             }
                         }
 
@@ -366,6 +368,7 @@ fun PigmiRegisterScreen(
 @Composable
 private fun PigmiRow(
     account: PigmiAccount,
+    currentLanguage: String = SettingsManager.LANG_ENGLISH,
     modifier: Modifier = Modifier
 ) {
     val inkColor = MaterialTheme.colorScheme.onBackground
@@ -408,7 +411,7 @@ private fun PigmiRow(
 
             // Name
             Text(
-                text = account.name,
+                text = KannadaNameHelper.formatDisplayName(account.name, currentLanguage),
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = FontFamily.Serif,
                     fontWeight = FontWeight.Normal,

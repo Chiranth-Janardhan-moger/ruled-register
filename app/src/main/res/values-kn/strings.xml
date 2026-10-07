@@ -73,4 +73,22 @@
     <string name="copy">ನಕಲಿಸಿ</string>
     <string name="sum_assured">ವಿಮಾ ಮೊತ್ತ (Sum Assured)</string>
     <string name="policy_number_copied">ಪಾಲಿಸಿ ಸಂಖ್ಯೆಯನ್ನು ನಕಲಿಸಲಾಗಿದೆ</string>
+    <string name="notification_channel_lic_name">ಎಲ್.ಐ.ಸಿ ಪಾಲಿಸಿ ಜ್ಞಾಪನೆಗಳು</string>
+    <string name="notification_channel_lic_desc">ಮುಂದಿನ ಮತ್ತು ಬಾಕಿ ಇರುವ ಎಲ್.ಐ.ಸಿ ಪಾಲಿಸಿ ಪ್ರೀಮಿಯಂ ಜ್ಞಾಪನೆಗಳು</string>
+    <string name="sync_policies">ಪಾಲಿಸಿಗಳನ್ನು ನವೀಕರಿಸಿ (Sync)</string>
+    <string name="syncing_policies">ಕ್ಲೌಡ್‌ನಿಂದ ಪಾಲಿಸಿಗಳನ್ನು ನವೀಕರಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="sync_success">%d ಪಾಲಿಸಿಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ನವೀಕರಿಸಲಾಗಿದೆ</string>
+    <string name="sync_failed">ನವೀಕರಣ ವಿಫಲವಾಗಿದೆ. ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿರುವ ಪಾಲಿಸಿಗಳನ್ನು ಬಳಸಲಾಗುತ್ತಿದೆ.</string>
+    <string name="cloud_sync_url">ಕ್ಲೌಡ್ ಸಿಂಕ್ ಲಿಂಕ್ (Sync URL)</string>
+    <string name="cloud_sync_title">ಪಾಲಿಸಿ ಕ್ಲೌಡ್ ಸಿಂಕ್</string>
+    <string name="cloud_sync_subtitle">ಆನ್‌ಲೈನ್ JSON ಅಥವಾ Private Gist ನಿಂದ ಪಾಲಿಸಿಗಳನ್ನು ಸಿಂಕ್ ಮಾಡಿ</string>
+    <string name="sync_now">ಈಗಲೇ ಸಿಂಕ್ ಮಾಡಿ</string>
+    <string name="last_synced">ಕೊನೆಯದಾಗಿ ಸಿಂಕ್ ಆಗಿದ್ದು: %s</string>
+    <string name="never_synced">ಇನ್ನೂ ಸಿಂಕ್ ಆಗಿಲ್ಲ</string>
+    <string name="text_size_title">ಅಕ್ಷರದ ಗಾತ್ರ (Text Size)</string>
+    <string name="text_size_preview">ಮಾದರಿ ಪೂರ್ವವೀಕ್ಷಣೆ (Preview)</string>
+    <string name="text_size_sample_pigmi">೧೨೩. ರಮೇಶ್ ಗೌಡ — ₹೫೦೦</string>
+    <string name="text_size_sample_lic">739558210 • ಚಿರಂತ ಮೊಗೇರ • ₹೧೧,೮೭೩</string>
+    <string name="decrease_text_size">ಅಕ್ಷರದ ಗಾತ್ರ ಕಡಿಮೆ ಮಾಡಿ</string>
+    <string name="increase_text_size">ಅಕ್ಷರದ ಗಾತ್ರ ಹೆಚ್ಚಿಸಿ</string>
 </resources>

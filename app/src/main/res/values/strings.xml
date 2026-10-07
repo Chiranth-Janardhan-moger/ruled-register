@@ -72,4 +72,22 @@
     <string name="copy">Copy</string>
     <string name="sum_assured">Sum Assured</string>
     <string name="policy_number_copied">Policy number copied</string>
+    <string name="notification_channel_lic_name">LIC Policy Reminders</string>
+    <string name="notification_channel_lic_desc">Notifications for upcoming and due LIC policy premiums</string>
+    <string name="sync_policies">Sync Policies</string>
+    <string name="syncing_policies">Syncing policies from cloud…</string>
+    <string name="sync_success">Synced %d policies successfully</string>
+    <string name="sync_failed">Sync failed. Using offline policies.</string>
+    <string name="cloud_sync_url">Cloud Sync URL</string>
+    <string name="cloud_sync_title">Policy Cloud Sync</string>
+    <string name="cloud_sync_subtitle">Sync policies from Private Gist or remote JSON</string>
+    <string name="sync_now">Sync Now</string>
+    <string name="last_synced">Last synced: %s</string>
+    <string name="never_synced">Never synced</string>
+    <string name="text_size_title">Text Size</string>
+    <string name="text_size_preview">Preview</string>
+    <string name="text_size_sample_pigmi">123. Ramesh Gowda — ₹500</string>
+    <string name="text_size_sample_lic">739558210 • Chiranth Moger • ₹11,873</string>
+    <string name="decrease_text_size">Decrease text size</string>
+    <string name="increase_text_size">Increase text size</string>
 </resources>

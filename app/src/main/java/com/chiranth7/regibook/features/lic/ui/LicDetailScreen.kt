@@ -63,6 +63,7 @@ import com.chiranth7.regibook.features.lic.data.LicAccount
 import com.chiranth7.regibook.features.lic.util.PaymentReminderHelper
 import com.chiranth7.regibook.features.lic.util.PaymentReminderStatus
 import com.chiranth7.regibook.features.lic.viewmodel.LicViewModel
+import com.chiranth7.regibook.util.KannadaNameHelper
 import com.chiranth7.regibook.util.SettingsManager
 
 @Composable
@@ -79,6 +80,7 @@ fun LicDetailScreen(
     }
 
     val account by viewModel.selectedAccount.collectAsStateWithLifecycle()
+    val currentLang by settingsManager.currentLanguage.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     val inkColor = MaterialTheme.colorScheme.onBackground
@@ -258,7 +260,7 @@ fun LicDetailScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = acc.name,
+                                text = KannadaNameHelper.formatDisplayName(acc.name, currentLang),
                                 style = MaterialTheme.typography.headlineSmall.copy(
                                     fontFamily = FontFamily.Serif,
                                     fontWeight = FontWeight.Bold,
@@ -334,7 +336,7 @@ fun LicDetailScreen(
                                             color = MaterialTheme.colorScheme.primaryContainer
                                         ) {
                                             Text(
-                                                text = acc.policyName,
+                                                text = KannadaNameHelper.formatDisplayName(acc.policyName, currentLang),
                                                 style = MaterialTheme.typography.titleMedium.copy(
                                                     fontWeight = FontWeight.SemiBold,
                                                     fontSize = 15.sp

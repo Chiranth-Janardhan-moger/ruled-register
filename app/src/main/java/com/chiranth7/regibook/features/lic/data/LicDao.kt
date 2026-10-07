@@ -13,6 +13,9 @@ interface LicDao {
     @Query("SELECT * FROM lic_accounts ORDER BY id DESC")
     fun getAllAccounts(): Flow<List<LicAccount>>
 
+    @Query("SELECT * FROM lic_accounts ORDER BY id DESC")
+    suspend fun getAllAccountsList(): List<LicAccount>
+
     @Query("SELECT * FROM lic_accounts WHERE id = :id LIMIT 1")
     fun getAccountById(id: Long): Flow<LicAccount?>
 

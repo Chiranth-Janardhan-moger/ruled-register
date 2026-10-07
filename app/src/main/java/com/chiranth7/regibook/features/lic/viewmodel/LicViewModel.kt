@@ -41,6 +41,44 @@ class LicViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
+    private val _syncMessage = MutableStateFlow<String?>(null)
+    val syncMessage: StateFlow<String?> = _syncMessage.asStateFlow()
+
+    fun clearSyncMessage() {
+        _syncMessage.value = null
+    }
+
+    fun syncPolicies(
+        context: android.content.Context,
+        settingsManager: com.chiranth7.regibook.util.SettingsManager,
+        customUrl: String? = null
+    ) {
+        if (_isSyncing.value) return
+        _isSyncing.value = true
+        viewModelScope.launch {
+            val result = com.chiranth7.regibook.features.lic.sync.LicSyncManager.syncPolicies(
+                context = context,
+                settingsManager = settingsManager,
+                customUrl = customUrl
+            )
+            _isSyncing.value = false
+            when (result) {
+                is com.chiranth7.regibook.features.lic.sync.LicSyncManager.SyncResult.Success -> {
+                    _syncMessage.value = context.getString(
+                        com.chiranth7.regibook.R.string.sync_success,
+                        result.count
+                    )
+                }
+                is com.chiranth7.regibook.features.lic.sync.LicSyncManager.SyncResult.Error -> {
+                    _syncMessage.value = context.getString(com.chiranth7.regibook.R.string.sync_failed)
+                }
+            }
+        }
+    }
+
     init {
         viewModelScope.launch {
             // Remove old mock sample policies from earlier versions if present

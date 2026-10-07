@@ -3,6 +3,7 @@ package com.chiranth7.regibook
 import android.app.Application
 import com.chiranth7.regibook.data.AppDatabase
 import com.chiranth7.regibook.features.lic.data.LicRepository
+import com.chiranth7.regibook.features.lic.worker.DailyLicReminderWorker
 import com.chiranth7.regibook.features.pigmi.data.PigmiRepository
 import com.chiranth7.regibook.util.LanguageManager
 import com.chiranth7.regibook.util.SettingsManager
@@ -15,5 +16,10 @@ class RegisterApplication : Application() {
     val settingsManager: SettingsManager by lazy { SettingsManager(this) }
     val languageManager: LanguageManager by lazy { LanguageManager(this) }
     val updateManager: UpdateManager by lazy { UpdateManager(this) }
+
+    override fun onCreate() {
+        super.onCreate()
+        DailyLicReminderWorker.schedule(this)
+    }
 }
 

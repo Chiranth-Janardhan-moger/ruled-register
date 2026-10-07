@@ -99,6 +99,47 @@ class ExampleRobolectricTest {
   }
 
   @Test
+  fun `settings manager stores policy sync url and timestamp`() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val settingsManager = SettingsManager(context)
+    assertEquals(SettingsManager.DEFAULT_POLICY_SYNC_URL, settingsManager.policySyncUrl.value)
+
+    val customUrl = "https://gist.githubusercontent.com/test/raw/policies.json"
+    settingsManager.setPolicySyncUrl(customUrl)
+    assertEquals(customUrl, settingsManager.policySyncUrl.value)
+
+    assertEquals(0L, settingsManager.lastSyncTimestamp.value)
+    val now = System.currentTimeMillis()
+    settingsManager.setLastSyncTimestamp(now)
+    assertEquals(now, settingsManager.lastSyncTimestamp.value)
+  }
+
+  @Test
+  fun `daily reminder worker schedule registers unique work`() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    com.chiranth7.regibook.features.lic.worker.DailyLicReminderWorker.schedule(context)
+  }
+
+  @Test
+  fun `settings manager adjusts font scale within bounds`() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val settingsManager = SettingsManager(context)
+    assertEquals(1.0f, settingsManager.fontScale.value, 0.01f)
+
+    settingsManager.increaseFontScale()
+    assertEquals(1.10f, settingsManager.fontScale.value, 0.01f)
+
+    settingsManager.decreaseFontScale()
+    assertEquals(1.0f, settingsManager.fontScale.value, 0.01f)
+
+    settingsManager.setFontScale(2.5f) // Should clamp to MAX_FONT_SCALE
+    assertEquals(SettingsManager.MAX_FONT_SCALE, settingsManager.fontScale.value, 0.01f)
+
+    settingsManager.setFontScale(0.1f) // Should clamp to MIN_FONT_SCALE
+    assertEquals(SettingsManager.MIN_FONT_SCALE, settingsManager.fontScale.value, 0.01f)
+  }
+
+  @Test
   fun `launch MainActivity test`() {
     val controller = org.robolectric.Robolectric.buildActivity(MainActivity::class.java)
     controller.setup()

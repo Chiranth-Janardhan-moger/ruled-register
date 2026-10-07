@@ -1,6 +1,7 @@
 package com.chiranth7.regibook.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -22,18 +23,27 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CardMembership
+import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,12 +52,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.widget.Toast
+import com.chiranth7.regibook.features.lic.sync.LicSyncManager
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chiranth7.regibook.BuildConfig
@@ -69,10 +86,17 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val currentLang by settingsManager.currentLanguage.collectAsStateWithLifecycle()
+    val fontScale by settingsManager.fontScale.collectAsStateWithLifecycle()
     val updateState by updateManager.updateState.collectAsStateWithLifecycle()
+    val syncUrl by settingsManager.policySyncUrl.collectAsStateWithLifecycle()
+    val lastSyncTime by settingsManager.lastSyncTimestamp.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     var showAddTypeDialog by remember { mutableStateOf(false) }
+    var showEditSyncUrlDialog by remember { mutableStateOf(false) }
+    var syncUrlInput by remember { mutableStateOf("") }
+    var isSyncingPolicies by remember { mutableStateOf(false) }
 
     val inkColor = MaterialTheme.colorScheme.onBackground
     val secondaryInk = MaterialTheme.colorScheme.onSurfaceVariant
@@ -82,6 +106,56 @@ fun SettingsScreen(
     BackHandler(enabled = !isNavigatingBack) {
         isNavigatingBack = true
         onNavigateBack()
+    }
+
+    // Dialog to edit sync URL
+    if (showEditSyncUrlDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditSyncUrlDialog = false },
+            title = { Text(stringResource(R.string.cloud_sync_url)) },
+            text = {
+                Column {
+                    Text(
+                        text = "Enter raw URL of your Private GitHub Gist or online JSON file containing customer policies:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = secondaryInk
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = syncUrlInput,
+                        onValueChange = { syncUrlInput = it },
+                        placeholder = { Text("https://gist.githubusercontent.com/.../raw/...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = false,
+                        maxLines = 4
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(
+                        onClick = {
+                            syncUrlInput = SettingsManager.DEFAULT_POLICY_SYNC_URL
+                        }
+                    ) {
+                        Text("Reset to Default URL")
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        settingsManager.setPolicySyncUrl(syncUrlInput)
+                        showEditSyncUrlDialog = false
+                        Toast.makeText(context, "Sync URL saved", Toast.LENGTH_SHORT).show()
+                    }
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditSyncUrlDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
     }
 
     // Dialog asking: Add Pigmi or LIC?
@@ -367,6 +441,279 @@ fun SettingsScreen(
                     onClick = { settingsManager.setLanguage(SettingsManager.LANG_KANNADA) },
                     testTag = "language_option_kannada"
                 )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Section 2.5: Policy Cloud Sync
+                Text(
+                    text = stringResource(R.string.cloud_sync_title).uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    ),
+                    color = secondaryInk,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.CloudSync,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.cloud_sync_title),
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontFamily = FontFamily.Serif,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp
+                                    ),
+                                    color = inkColor
+                                )
+                                Text(
+                                    text = stringResource(R.string.cloud_sync_subtitle),
+                                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Serif),
+                                    color = secondaryInk
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // URL Display and Edit
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    syncUrlInput = syncUrl
+                                    showEditSyncUrlDialog = true
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.cloud_sync_url),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = secondaryInk
+                                    )
+                                    Text(
+                                        text = syncUrl.ifBlank { "Not configured" },
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 11.sp
+                                        ),
+                                        color = inkColor,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Edit URL",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        val lastSyncText = if (lastSyncTime > 0) {
+                            val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
+                            stringResource(R.string.last_synced, sdf.format(Date(lastSyncTime)))
+                        } else {
+                            stringResource(R.string.never_synced)
+                        }
+
+                        Text(
+                            text = lastSyncText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = secondaryInk
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(
+                            onClick = {
+                                isSyncingPolicies = true
+                                coroutineScope.launch {
+                                    val result = LicSyncManager.syncPolicies(context, settingsManager)
+                                    isSyncingPolicies = false
+                                    when (result) {
+                                        is LicSyncManager.SyncResult.Success -> {
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(R.string.sync_success, result.count),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                        is LicSyncManager.SyncResult.Error -> {
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(R.string.sync_failed),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    }
+                                }
+                            },
+                            enabled = !isSyncingPolicies,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = if (isSyncingPolicies) stringResource(R.string.syncing_policies) else stringResource(R.string.sync_now),
+                                fontFamily = FontFamily.Serif,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Section: Text Size
+                Text(
+                    text = stringResource(R.string.text_size_title).uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    ),
+                    color = secondaryInk,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FormatSize,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.text_size_title),
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontFamily = FontFamily.Serif,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp
+                                    ),
+                                    color = inkColor
+                                )
+                                val percent = Math.round(fontScale * 100)
+                                Text(
+                                    text = "$percent%",
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontFamily = FontFamily.Monospace,
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            // - button
+                            FilledTonalIconButton(
+                                onClick = { settingsManager.decreaseFontScale() },
+                                enabled = fontScale > SettingsManager.MIN_FONT_SCALE + 0.01f,
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .testTag("decrease_font_size_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Remove,
+                                    contentDescription = stringResource(R.string.decrease_text_size),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            // + button
+                            FilledTonalIconButton(
+                                onClick = { settingsManager.increaseFontScale() },
+                                enabled = fontScale < SettingsManager.MAX_FONT_SCALE - 0.01f,
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .testTag("increase_font_size_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = stringResource(R.string.increase_text_size),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Live Sample Text Preview Box
+                        Text(
+                            text = stringResource(R.string.text_size_preview).uppercase(),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 11.sp
+                            ),
+                            color = secondaryInk
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Text(
+                                    text = "Pigmi: " + stringResource(R.string.text_size_sample_pigmi),
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontFamily = FontFamily.Serif,
+                                        fontWeight = FontWeight.Normal,
+                                        fontSize = 17.sp * fontScale
+                                    ),
+                                    color = inkColor
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "LIC: " + stringResource(R.string.text_size_sample_lic),
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontFamily = FontFamily.Serif,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 15.sp * fontScale
+                                    ),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 

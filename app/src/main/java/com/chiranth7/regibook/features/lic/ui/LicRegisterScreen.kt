@@ -38,10 +38,12 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,6 +53,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,6 +79,7 @@ import com.chiranth7.regibook.features.lic.data.LicAccount
 import com.chiranth7.regibook.features.lic.util.PaymentReminderHelper
 import com.chiranth7.regibook.features.lic.util.PaymentReminderStatus
 import com.chiranth7.regibook.features.lic.viewmodel.LicViewModel
+import com.chiranth7.regibook.util.KannadaNameHelper
 import com.chiranth7.regibook.util.RegisterType
 import com.chiranth7.regibook.util.SettingsManager
 import kotlinx.coroutines.launch
@@ -99,11 +103,21 @@ fun LicRegisterScreen(
 ) {
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val agentNumber by settingsManager.agentNumber.collectAsStateWithLifecycle()
+    val currentLang by settingsManager.currentLanguage.collectAsStateWithLifecycle()
+    val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle()
+    val syncMessage by viewModel.syncMessage.collectAsStateWithLifecycle()
     var showProfileDialog by remember { mutableStateOf(false) }
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    LaunchedEffect(syncMessage) {
+        syncMessage?.let { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            viewModel.clearSyncMessage()
+        }
+    }
 
     val inkColor = MaterialTheme.colorScheme.onBackground
     val secondaryInk = MaterialTheme.colorScheme.onSurfaceVariant
@@ -160,6 +174,37 @@ fun LicRegisterScreen(
 
                     Spacer(modifier = Modifier.weight(1f))
 
+                    // Cloud Sync Button
+                    if (isSyncing) {
+                        Box(
+                            modifier = Modifier.size(48.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    } else {
+                        IconButton(
+                            onClick = {
+                                Toast.makeText(context, context.getString(R.string.syncing_policies), Toast.LENGTH_SHORT).show()
+                                viewModel.syncPolicies(context, settingsManager)
+                            },
+                            modifier = Modifier
+                                .size(48.dp)
+                                .testTag("sync_policies_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Sync,
+                                contentDescription = stringResource(R.string.sync_policies),
+                                tint = inkColor,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+
                     IconButton(
                         onClick = { showProfileDialog = true },
                         modifier = Modifier
@@ -211,6 +256,7 @@ fun LicRegisterScreen(
                             ) { account ->
                                 LicPolicyCard(
                                     account = account,
+                                    currentLanguage = currentLang,
                                     onClick = {
                                         viewModel.selectAccount(account.id)
                                         onNavigateToDetails(account.id)
@@ -246,6 +292,7 @@ fun LicRegisterScreen(
 @Composable
 private fun LicPolicyCard(
     account: LicAccount,
+    currentLanguage: String = SettingsManager.LANG_ENGLISH,
     onClick: () -> Unit,
     onCall: (() -> Unit)? = null,
     modifier: Modifier = Modifier
@@ -278,7 +325,7 @@ private fun LicPolicyCard(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = account.name,
+                        text = KannadaNameHelper.formatDisplayName(account.name, currentLanguage),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontFamily = FontFamily.Serif,
                             fontWeight = FontWeight.Bold,
@@ -292,7 +339,7 @@ private fun LicPolicyCard(
                     if (account.policyName.isNotBlank()) {
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = account.policyName,
+                            text = KannadaNameHelper.formatDisplayName(account.policyName, currentLanguage),
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 13.sp
