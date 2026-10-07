@@ -41,6 +41,26 @@ class LicViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            if (repository.getAccountByPolicyNumber("739558210") == null) {
+                repository.insert(
+                    LicAccount(
+                        name = "Chiranth Janardhan Moger",
+                        policyNumber = "739558210",
+                        policyName = "736 - LIC'S JEEVAN LABH PLAN",
+                        totalYears = "21/15",
+                        lastPaymentDate = "29/06/2025",
+                        nextPaymentDate = "28/06/2026",
+                        premiumAmount = "₹11,873/Year",
+                        address = "Sum Assured: ₹2,00,000 | Lapsed (First Year Renewal)",
+                        phoneNumber = ""
+                    )
+                )
+            }
+        }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val accounts: StateFlow<List<LicAccount>> = _searchQuery
         .flatMapLatest { query ->

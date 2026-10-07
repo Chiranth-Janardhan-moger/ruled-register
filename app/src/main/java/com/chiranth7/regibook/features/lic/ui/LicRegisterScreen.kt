@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
@@ -36,7 +35,6 @@ import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
@@ -49,10 +47,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -237,8 +233,7 @@ fun LicRegisterScreen(
 
         if (showProfileDialog) {
             LicProfileDialog(
-                agentNumber = agentNumber,
-                onSaveAgentNumber = { settingsManager.setAgentNumber(it) },
+                agentNumber = agentNumber.ifBlank { SettingsManager.DEFAULT_AGENT_CODE },
                 onDismiss = { showProfileDialog = false }
             )
         }
@@ -444,13 +439,10 @@ private fun LicPolicyCard(
 
 @Composable
 fun LicProfileDialog(
-    agentNumber: String,
-    onSaveAgentNumber: (String) -> Unit,
+    agentNumber: String = SettingsManager.DEFAULT_AGENT_CODE,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    var isEditingAgentNumber by remember { mutableStateOf(false) }
-    var editedAgentNumber by remember(agentNumber) { mutableStateOf(agentNumber) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -514,7 +506,7 @@ fun LicProfileDialog(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Agent Number Card
+                // Agent Number Card (Fixed, Copy Only)
                 Surface(
                     shape = RoundedCornerShape(14.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
@@ -537,57 +529,33 @@ fun LicProfileDialog(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = if (agentNumber.isNotBlank()) agentNumber else stringResource(R.string.tap_to_set_agent_number),
+                                text = agentNumber,
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontFamily = FontFamily.Monospace,
-                                    fontWeight = if (agentNumber.isNotBlank()) FontWeight.Bold else FontWeight.Normal,
+                                    fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp
                                 ),
-                                color = if (agentNumber.isNotBlank()) {
-                                    MaterialTheme.colorScheme.onSurface
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                }
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
                         // Copy Icon Button
-                        if (agentNumber.isNotBlank()) {
-                            IconButton(
-                                onClick = {
-                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    val clip = ClipData.newPlainText("Agent Number", agentNumber)
-                                    clipboard.setPrimaryClip(clip)
-                                    Toast.makeText(context, context.getString(R.string.agent_number_copied), Toast.LENGTH_SHORT).show()
-                                },
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .testTag("copy_agent_number_button")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.ContentCopy,
-                                    contentDescription = stringResource(R.string.copy),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-
-                        // Edit Icon Button
                         IconButton(
                             onClick = {
-                                editedAgentNumber = agentNumber
-                                isEditingAgentNumber = true
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = ClipData.newPlainText("Agent Number", agentNumber)
+                                clipboard.setPrimaryClip(clip)
+                                Toast.makeText(context, context.getString(R.string.agent_number_copied), Toast.LENGTH_SHORT).show()
                             },
                             modifier = Modifier
                                 .size(36.dp)
-                                .testTag("edit_agent_number_button")
+                                .testTag("copy_agent_number_button")
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Edit Agent Number",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp)
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = stringResource(R.string.copy),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
@@ -606,55 +574,5 @@ fun LicProfileDialog(
             }
         }
     }
-
-    if (isEditingAgentNumber) {
-        Dialog(onDismissRequest = { isEditingAgentNumber = false }) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = stringResource(R.string.agent_number),
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = editedAgentNumber,
-                        onValueChange = { editedAgentNumber = it },
-                        label = { Text(stringResource(R.string.agent_number_hint)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        TextButton(onClick = { isEditingAgentNumber = false }) {
-                            Text(stringResource(R.string.cancel))
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                onSaveAgentNumber(editedAgentNumber)
-                                isEditingAgentNumber = false
-                            }
-                        ) {
-                            Text(stringResource(R.string.save))
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
+

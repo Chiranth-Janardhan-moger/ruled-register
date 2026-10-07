@@ -15,5 +15,8 @@ class LicRepository(private val dao: LicDao) {
 
     suspend fun delete(account: LicAccount) = dao.deleteAccount(account)
 
+    suspend fun getAccountByPolicyNumber(policyNumber: String): LicAccount? =
+        dao.getAccountByPolicyNumber(policyNumber)
+
     suspend fun getCount(): Int = dao.getAccountCount()
 }

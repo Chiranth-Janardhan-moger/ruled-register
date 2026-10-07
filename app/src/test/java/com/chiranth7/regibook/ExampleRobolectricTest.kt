@@ -53,7 +53,7 @@ class ExampleRobolectricTest {
     settingsManager.setActiveRegisterType(RegisterType.PIGMI)
     assertEquals(RegisterType.PIGMI, settingsManager.activeRegisterType.value)
 
-    assertEquals("", settingsManager.agentNumber.value)
+    assertEquals(SettingsManager.DEFAULT_AGENT_CODE, settingsManager.agentNumber.value)
     settingsManager.setAgentNumber("08492048")
     assertEquals("08492048", settingsManager.agentNumber.value)
   }

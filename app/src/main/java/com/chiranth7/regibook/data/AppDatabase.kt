@@ -76,6 +76,7 @@ abstract class AppDatabase : RoomDatabase() {
                                         "INSERT INTO lic_accounts (name, policyNumber, policyName, totalYears, lastPaymentDate, nextPaymentDate, phoneNumber, address, premiumAmount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
                                     )
                                     val sampleLics = listOf(
+                                        listOf("Chiranth Janardhan Moger", "739558210", "736 - LIC'S JEEVAN LABH PLAN", "21/15", "29/06/2025", "28/06/2026", "", "Sum Assured: ₹2,00,000 | Lapsed (First Year Renewal)", "₹11,873/Year"),
                                         listOf("Kiran Kumar", "POL-8923410", "Jeevan Labh", "16 Years", "15/09/2026", "15/10/2026", "+91 99001 23456", "Indiranagar, Bengaluru", "₹2,500"),
                                         listOf("Pooja Sharma", "POL-4521908", "Jeevan Anand", "20 Years", "02/10/2026", "02/11/2026", "+91 98800 11223", "Rajajinagar, Bengaluru", "₹5,000"),
                                         listOf("Suresh Gowda", "POL-6638192", "Jeevan Umang", "25 Years", "28/08/2026", "28/11/2026", "+91 94480 33445", "Jayanagar, Bengaluru", "₹3,200")

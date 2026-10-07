@@ -47,7 +47,7 @@ class SettingsManager(context: Context) {
 
     // Agent Number for LIC profile
     private val _agentNumber = MutableStateFlow(
-        prefs.getString(KEY_AGENT_NUMBER, "") ?: ""
+        prefs.getString(KEY_AGENT_NUMBER, DEFAULT_AGENT_CODE) ?: DEFAULT_AGENT_CODE
     )
     val agentNumber: StateFlow<String> = _agentNumber.asStateFlow()
 
@@ -64,6 +64,7 @@ class SettingsManager(context: Context) {
         private const val KEY_LANGUAGE = "selected_language"
         private const val KEY_REGISTER_TYPE = "selected_register_type"
         private const val KEY_AGENT_NUMBER = "lic_agent_number"
+        const val DEFAULT_AGENT_CODE = "LIC0246463V"
 
         const val LANG_ENGLISH = "en"
         const val LANG_KANNADA = "kn"

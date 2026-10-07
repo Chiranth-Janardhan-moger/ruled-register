@@ -28,6 +28,9 @@ interface LicDao {
     @Delete
     suspend fun deleteAccount(account: LicAccount)
 
+    @Query("SELECT * FROM lic_accounts WHERE policyNumber = :policyNumber LIMIT 1")
+    suspend fun getAccountByPolicyNumber(policyNumber: String): LicAccount?
+
     @Query("SELECT COUNT(*) FROM lic_accounts")
     suspend fun getAccountCount(): Int
 }
