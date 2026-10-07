@@ -70,4 +70,6 @@
     <string name="agent_number_hint">Enter agent number</string>
     <string name="tap_to_set_agent_number">Tap to enter agent number</string>
     <string name="copy">Copy</string>
+    <string name="sum_assured">Sum Assured</string>
+    <string name="policy_number_copied">Policy number copied</string>
 </resources>

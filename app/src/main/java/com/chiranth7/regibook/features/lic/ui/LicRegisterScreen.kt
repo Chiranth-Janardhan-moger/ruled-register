@@ -250,6 +250,7 @@ private fun LicPolicyCard(
     onCall: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val inkColor = MaterialTheme.colorScheme.onBackground
     val secondaryInk = MaterialTheme.colorScheme.onSurfaceVariant
     val cardBg = Color(0xFFFFFFFF)
@@ -332,15 +333,39 @@ private fun LicPolicyCard(
                     shape = RoundedCornerShape(6.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
-                    Text(
-                        text = "No: ${account.policyNumber}",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 12.sp
-                        ),
-                        color = inkColor,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(start = 8.dp, end = 2.dp, top = 2.dp, bottom = 2.dp)
+                    ) {
+                        Text(
+                            text = "No: ${account.policyNumber}",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 12.sp
+                            ),
+                            color = inkColor
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        IconButton(
+                            onClick = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = ClipData.newPlainText("Policy Number", account.policyNumber)
+                                clipboard.setPrimaryClip(clip)
+                                Toast.makeText(context, context.getString(R.string.policy_number_copied), Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier
+                                .size(24.dp)
+                                .testTag("copy_policy_no_${account.id}")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = stringResource(R.string.copy),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(13.dp)
+                            )
+                        }
+                    }
                 }
 
                 if (account.totalYears.isNotBlank()) {

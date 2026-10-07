@@ -1,8 +1,11 @@
 package com.chiranth7.regibook.features.lic.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.provider.CalendarContract
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -25,34 +28,25 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Alarm
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.HourglassBottom
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -77,7 +71,7 @@ fun LicDetailScreen(
     viewModel: LicViewModel,
     settingsManager: SettingsManager,
     onNavigateBack: () -> Unit,
-    onNavigateToEdit: (LicAccount) -> Unit,
+    onNavigateToEdit: (LicAccount) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect(accountId) {
@@ -85,7 +79,6 @@ fun LicDetailScreen(
     }
 
     val account by viewModel.selectedAccount.collectAsStateWithLifecycle()
-    var showDeleteDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val inkColor = MaterialTheme.colorScheme.onBackground
@@ -134,34 +127,6 @@ fun LicDetailScreen(
                     color = inkColor,
                     modifier = Modifier.padding(start = 8.dp)
                 )
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                account?.let { currentAccount ->
-                    IconButton(
-                        onClick = { onNavigateToEdit(currentAccount) },
-                        modifier = Modifier.testTag("edit_lic_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = stringResource(R.string.edit),
-                            tint = inkColor,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-
-                    IconButton(
-                        onClick = { showDeleteDialog = true },
-                        modifier = Modifier.testTag("delete_lic_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = stringResource(R.string.delete),
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
             }
 
             account?.let { acc ->
@@ -273,93 +238,6 @@ fun LicDetailScreen(
                                 }
                             }
 
-                            // Reminder Action Buttons
-                            if (acc.nextPaymentDate.isNotBlank()) {
-                                Spacer(modifier = Modifier.height(14.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    // Add to Calendar
-                                    OutlinedButton(
-                                        onClick = {
-                                            val dueDate = PaymentReminderHelper.parseDate(acc.nextPaymentDate)
-                                            val calIntent = Intent(Intent.ACTION_INSERT).apply {
-                                                data = CalendarContract.Events.CONTENT_URI
-                                                putExtra(CalendarContract.Events.TITLE, "LIC Premium Due: ${acc.name}")
-                                                putExtra(
-                                                    CalendarContract.Events.DESCRIPTION,
-                                                    "LIC Policy ${acc.policyName} (${acc.policyNumber}) premium of ${acc.premiumAmount} is due."
-                                                )
-                                                if (dueDate != null) {
-                                                    putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, dueDate.time)
-                                                    putExtra(CalendarContract.EXTRA_EVENT_END_TIME, dueDate.time + 3600000L)
-                                                }
-                                            }
-                                            context.startActivity(calIntent)
-                                        },
-                                        shape = RoundedCornerShape(10.dp),
-                                        colors = ButtonDefaults.outlinedButtonColors(
-                                            contentColor = inkColor
-                                        ),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.CalendarMonth,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = stringResource(R.string.add_to_calendar),
-                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                                            maxLines = 1
-                                        )
-                                    }
-
-                                    // Send Reminder message
-                                    OutlinedButton(
-                                        onClick = {
-                                            val reminderMsg = PaymentReminderHelper.generateReminderMessage(
-                                                name = acc.name,
-                                                policyNumber = acc.policyNumber,
-                                                policyName = acc.policyName,
-                                                nextPaymentDate = acc.nextPaymentDate,
-                                                premiumAmount = acc.premiumAmount
-                                            )
-                                            val sendIntent = if (acc.phoneNumber.isNotBlank()) {
-                                                Intent(Intent.ACTION_SENDTO).apply {
-                                                    data = Uri.parse("smsto:${acc.phoneNumber.trim()}")
-                                                    putExtra("sms_body", reminderMsg)
-                                                }
-                                            } else {
-                                                Intent(Intent.ACTION_SEND).apply {
-                                                    type = "text/plain"
-                                                    putExtra(Intent.EXTRA_TEXT, reminderMsg)
-                                                }
-                                            }
-                                            context.startActivity(sendIntent)
-                                        },
-                                        shape = RoundedCornerShape(10.dp),
-                                        colors = ButtonDefaults.outlinedButtonColors(
-                                            contentColor = inkColor
-                                        ),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Share,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = stringResource(R.string.send_reminder_client),
-                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                                            maxLines = 1
-                                        )
-                                    }
-                                }
-                            }
                         }
                     }
 
@@ -407,15 +285,39 @@ fun LicDetailScreen(
                                         shape = RoundedCornerShape(8.dp),
                                         color = MaterialTheme.colorScheme.surfaceVariant
                                     ) {
-                                        Text(
-                                            text = acc.policyNumber,
-                                            style = MaterialTheme.typography.titleMedium.copy(
-                                                fontWeight = FontWeight.SemiBold,
-                                                fontSize = 15.sp
-                                            ),
-                                            color = inkColor,
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(start = 10.dp, end = 4.dp, top = 2.dp, bottom = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = acc.policyNumber,
+                                                style = MaterialTheme.typography.titleMedium.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontFamily = FontFamily.Monospace,
+                                                    fontSize = 15.sp
+                                                ),
+                                                color = inkColor
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            IconButton(
+                                                onClick = {
+                                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                                    val clip = ClipData.newPlainText("Policy Number", acc.policyNumber)
+                                                    clipboard.setPrimaryClip(clip)
+                                                    Toast.makeText(context, context.getString(R.string.policy_number_copied), Toast.LENGTH_SHORT).show()
+                                                },
+                                                modifier = Modifier
+                                                    .size(32.dp)
+                                                    .testTag("copy_policy_number_button")
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.ContentCopy,
+                                                    contentDescription = stringResource(R.string.copy),
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
                                     }
                                 }
 
@@ -619,25 +521,32 @@ fun LicDetailScreen(
                                 }
                             }
 
-                            // Address
+                            // Sum Assured
                             if (acc.address.isNotEmpty()) {
                                 Spacer(modifier = Modifier.height(16.dp))
                                 HorizontalDivider(color = outlineBorder.copy(alpha = 0.5f))
                                 Spacer(modifier = Modifier.height(16.dp))
 
                                 Text(
-                                    text = stringResource(R.string.address),
+                                    text = stringResource(R.string.sum_assured),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = secondaryInk
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = acc.address,
-                                    style = MaterialTheme.typography.bodyLarge.copy(
-                                        fontSize = 15.sp
-                                    ),
-                                    color = inkColor
-                                )
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                                ) {
+                                    Text(
+                                        text = acc.address,
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 16.sp
+                                        ),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -645,52 +554,5 @@ fun LicDetailScreen(
             }
         }
     }
-
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = {
-                Text(
-                    text = stringResource(R.string.confirm_delete_title),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-            },
-            text = {
-                Text(
-                    text = stringResource(R.string.confirm_delete_msg),
-                    style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Serif)
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        account?.let { acc ->
-                            viewModel.deleteAccount(acc) {
-                                showDeleteDialog = false
-                                onNavigateBack()
-                            }
-                        }
-                    },
-                    modifier = Modifier.testTag("confirm_delete_button")
-                ) {
-                    Text(
-                        stringResource(R.string.delete),
-                        color = MaterialTheme.colorScheme.error,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDeleteDialog = false },
-                    modifier = Modifier.testTag("cancel_delete_button")
-                ) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
-    }
 }
+

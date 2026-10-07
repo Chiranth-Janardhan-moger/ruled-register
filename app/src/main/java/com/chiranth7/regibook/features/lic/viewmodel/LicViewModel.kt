@@ -43,7 +43,17 @@ class LicViewModel(
 
     init {
         viewModelScope.launch {
-            if (repository.getAccountByPolicyNumber("739558210") == null) {
+            // Remove old mock sample policies from earlier versions if present
+            val oldMockPolicies = listOf("POL-8923410", "POL-4521908", "POL-6638192")
+            for (oldPolicy in oldMockPolicies) {
+                repository.getAccountByPolicyNumber(oldPolicy)?.let {
+                    repository.delete(it)
+                }
+            }
+
+            // Ensure Chiranth Janardhan Moger policy exists with Sum Assured
+            val existing = repository.getAccountByPolicyNumber("739558210")
+            if (existing == null) {
                 repository.insert(
                     LicAccount(
                         name = "Chiranth Janardhan Moger",
@@ -53,10 +63,12 @@ class LicViewModel(
                         lastPaymentDate = "29/06/2025",
                         nextPaymentDate = "28/06/2026",
                         premiumAmount = "₹11,873/Year",
-                        address = "Sum Assured: ₹2,00,000 | Lapsed (First Year Renewal)",
+                        address = "₹2,00,000",
                         phoneNumber = ""
                     )
                 )
+            } else if (existing.address != "₹2,00,000") {
+                repository.update(existing.copy(address = "₹2,00,000"))
             }
         }
     }

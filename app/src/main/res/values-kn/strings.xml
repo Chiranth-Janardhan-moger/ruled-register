@@ -71,4 +71,6 @@
     <string name="agent_number_hint">ಏಜೆಂಟ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ</string>
     <string name="tap_to_set_agent_number">ಏಜೆಂಟ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಲು ಒತ್ತಿರಿ</string>
     <string name="copy">ನಕಲಿಸಿ</string>
+    <string name="sum_assured">ವಿಮಾ ಮೊತ್ತ (Sum Assured)</string>
+    <string name="policy_number_copied">ಪಾಲಿಸಿ ಸಂಖ್ಯೆಯನ್ನು ನಕಲಿಸಲಾಗಿದೆ</string>
 </resources>
