@@ -71,9 +71,19 @@ object LicSyncManager {
                 DailyLicReminderWorker.checkAndPostReminders(context)
             } catch (_: Exception) {}
 
+            com.chiranth7.regibook.util.log.AppLogManager.log(context, "LicSync", "Synced $updatedCount policies successfully")
             SyncResult.Success(updatedCount)
         } catch (e: Exception) {
-            SyncResult.Error(e.message ?: "Failed to sync policies")
+            val errorMsg = e.message ?: "Failed to sync policies"
+            com.chiranth7.regibook.util.log.AppLogManager.log(
+                context,
+                "LicSync",
+                "Sync failed: $errorMsg",
+                isError = true,
+                throwable = e
+            )
+            com.chiranth7.regibook.util.log.AppLogManager.scheduleRetryOnConnectivity(context)
+            SyncResult.Error(errorMsg)
         }
     }
 

@@ -11,6 +11,7 @@ enum class PaymentReminderStatus {
     DUE_TODAY,
     DUE_SOON,
     UPCOMING,
+    COMPLETED,
     NOT_SET
 }
 
@@ -19,6 +20,12 @@ data class PaymentReminderInfo(
     val daysDifference: Long,
     val formattedDueDate: String,
     val statusMessage: String
+)
+
+data class NextPaymentAdvanceResult(
+    val newNextPaymentDate: String,
+    val newLastPaymentDate: String,
+    val isMatured: Boolean
 )
 
 object PaymentReminderHelper {
@@ -43,6 +50,20 @@ object PaymentReminderHelper {
     }
 
     fun calculateReminder(nextPaymentDate: String): PaymentReminderInfo {
+        val trimmed = nextPaymentDate.trim()
+        if (trimmed.equals("Completed", ignoreCase = true) ||
+            trimmed.equals("Matured", ignoreCase = true) ||
+            trimmed.contains("Completed", ignoreCase = true) ||
+            trimmed.contains("Matured", ignoreCase = true)
+        ) {
+            return PaymentReminderInfo(
+                status = PaymentReminderStatus.COMPLETED,
+                daysDifference = 0,
+                formattedDueDate = "Policy Matured",
+                statusMessage = "Completed"
+            )
+        }
+
         val dueDate = parseDate(nextPaymentDate)
         if (dueDate == null) {
             return PaymentReminderInfo(
@@ -120,5 +141,61 @@ object PaymentReminderHelper {
         val policyDesc = if (policyName.isNotBlank()) "$policyName ($policyNumber)" else "No: $policyNumber"
         val amountDesc = if (premiumAmount.isNotBlank()) " of $premiumAmount" else ""
         return "Dear $name, gentle reminder that your LIC Policy premium$amountDesc for policy $policyDesc is due on $nextPaymentDate. Kindly pay before the due date to keep your policy active."
+    }
+
+    fun calculateNextPaymentAdvance(
+        currentNextDate: String,
+        totalYears: String = "",
+        forceMatured: Boolean = false
+    ): NextPaymentAdvanceResult {
+        val todayStr = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
+        if (forceMatured) {
+            return NextPaymentAdvanceResult(
+                newNextPaymentDate = "Completed",
+                newLastPaymentDate = todayStr,
+                isMatured = true
+            )
+        }
+
+        val parsed = parseDate(currentNextDate)
+        if (parsed == null) {
+            return NextPaymentAdvanceResult(
+                newNextPaymentDate = currentNextDate,
+                newLastPaymentDate = todayStr,
+                isMatured = false
+            )
+        }
+
+        val cal = Calendar.getInstance().apply {
+            time = parsed
+        }
+        cal.add(Calendar.YEAR, 1)
+        val nextYear = cal.get(Calendar.YEAR)
+        val advancedDateStr = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(cal.time)
+
+        var isMatured = false
+        val cleanTotal = totalYears.trim()
+        val expiryDate = parseDate(cleanTotal)
+        if (expiryDate != null) {
+            val expCal = Calendar.getInstance().apply { time = expiryDate }
+            if (cal.after(expCal) || cal.get(Calendar.YEAR) >= expCal.get(Calendar.YEAR)) {
+                isMatured = true
+            }
+        } else {
+            val yearRegex = Regex("""\b(20[2-9][0-9])\b""")
+            val match = yearRegex.find(cleanTotal)
+            if (match != null) {
+                val expYear = match.value.toIntOrNull()
+                if (expYear != null && nextYear >= expYear) {
+                    isMatured = true
+                }
+            }
+        }
+
+        return NextPaymentAdvanceResult(
+            newNextPaymentDate = if (isMatured) "Completed" else advancedDateStr,
+            newLastPaymentDate = todayStr,
+            isMatured = isMatured
+        )
     }
 }

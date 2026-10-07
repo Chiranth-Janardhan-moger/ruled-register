@@ -36,7 +36,7 @@ class SettingsManager(context: Context) {
 
     fun setLanguage(languageCode: String) {
         val validCode = if (languageCode == LANG_KANNADA) LANG_KANNADA else LANG_ENGLISH
-        prefs.edit().putString(KEY_LANGUAGE, validCode).apply()
+        prefs.edit().putString(KEY_LANGUAGE, validCode).commit()
         _currentLanguage.value = validCode
     }
 

@@ -1,6 +1,7 @@
 package com.chiranth7.regibook
 
 import android.content.Context
+import android.content.res.Configuration
 import androidx.test.core.app.ApplicationProvider
 import com.chiranth7.regibook.features.lic.data.LicAccount
 import com.chiranth7.regibook.features.lic.util.PaymentReminderHelper
@@ -8,7 +9,9 @@ import com.chiranth7.regibook.features.lic.util.PaymentReminderStatus
 import com.chiranth7.regibook.util.RegisterType
 import com.chiranth7.regibook.util.SettingsManager
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -140,8 +143,160 @@ class ExampleRobolectricTest {
   }
 
   @Test
+  fun `calculateNextPaymentAdvance advances year correctly`() {
+    val result = PaymentReminderHelper.calculateNextPaymentAdvance(
+      currentNextDate = "28/06/2026",
+      totalYears = "21/15"
+    )
+    assertEquals("28/06/2027", result.newNextPaymentDate)
+    assertFalse(result.isMatured)
+    assertTrue(result.newLastPaymentDate.isNotBlank())
+  }
+
+  @Test
+  fun `calculateNextPaymentAdvance handles maturity correctly`() {
+    val forced = PaymentReminderHelper.calculateNextPaymentAdvance(
+      currentNextDate = "28/06/2026",
+      totalYears = "21/15",
+      forceMatured = true
+    )
+    assertEquals("Completed", forced.newNextPaymentDate)
+    assertTrue(forced.isMatured)
+
+    // With explicit expiry year that is reached
+    val expiryReached = PaymentReminderHelper.calculateNextPaymentAdvance(
+      currentNextDate = "28/06/2026",
+      totalYears = "2027"
+    )
+    assertEquals("Completed", expiryReached.newNextPaymentDate)
+    assertTrue(expiryReached.isMatured)
+
+    // Verify reminder returns COMPLETED
+    val reminder = PaymentReminderHelper.calculateReminder("Completed")
+    assertEquals(PaymentReminderStatus.COMPLETED, reminder.status)
+  }
+
+  @Test
   fun `launch MainActivity test`() {
     val controller = org.robolectric.Robolectric.buildActivity(MainActivity::class.java)
     controller.setup()
   }
+
+  @Test
+  fun `launch MainActivity with Kannada language does not crash`() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val settingsManager = SettingsManager(context)
+    settingsManager.setLanguage(SettingsManager.LANG_KANNADA)
+    val controller = org.robolectric.Robolectric.buildActivity(MainActivity::class.java)
+    controller.setup()
+  }
+
+  @Test
+  fun `test KannadaNameHelper edge cases`() {
+    val inputs = listOf(
+        "",
+        "   ",
+        "Chiranth",
+        "chiranth",
+        "Chiranth Janardhan Moger",
+        "736 - LIC'S JEEVAN LABH PLAN",
+        "12345",
+        "Special & Characters % $ # @ ! () / -",
+        "Already ಕನ್ನಡ Text",
+        "A B C",
+        "Dr. A. P. J. Abdul Kalam",
+        "Ramesh Kumar 15 Yrs (₹11,873)",
+        "Jeevan Labh",
+        "Jeevan Umang",
+        "LIC's",
+        "Plan",
+        "xyz unknown name 123",
+        "qq xx ww"
+    )
+    for (input in inputs) {
+      val res = com.chiranth7.regibook.util.KannadaNameHelper.formatDisplayName(input, SettingsManager.LANG_KANNADA)
+      assertNotNull(res)
+    }
+  }
+
+  @Test
+  fun `test all Kannada string resources can be loaded and formatted`() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val config = Configuration(context.resources.configuration).apply {
+      setLocale(Locale("kn"))
+    }
+    val knContext = context.createConfigurationContext(config)
+
+    // Test specific formatted strings
+    val syncSuccess = knContext.getString(R.string.sync_success, 42)
+    assertTrue(syncSuccess.contains("42"))
+
+    val lastSynced = knContext.getString(R.string.last_synced, "07 Oct, 10:30 PM")
+    assertTrue(lastSynced.contains("07 Oct, 10:30 PM"))
+
+    val paymentRecorded = knContext.getString(R.string.payment_recorded_success, "28/06/2027")
+    assertTrue(paymentRecorded.contains("28/06/2027"))
+
+    val policyCompleted = knContext.getString(R.string.policy_completed_success)
+    assertFalse(policyCompleted.isBlank())
+
+    val logsString = knContext.getString(R.string.logs)
+    assertFalse(logsString.isBlank())
+
+    val closeString = knContext.getString(R.string.close)
+    assertFalse(closeString.isBlank())
+  }
+
+  @Test
+  fun `test AppLogManager operations`() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    com.chiranth7.regibook.util.log.AppLogManager.clearLogs(context)
+    assertTrue(com.chiranth7.regibook.util.log.AppLogManager.getLogs(context).isEmpty())
+
+    com.chiranth7.regibook.util.log.AppLogManager.log(context, "TEST_TAG", "Sample info message", isError = false)
+    com.chiranth7.regibook.util.log.AppLogManager.log(context, "ERROR_TAG", "Sample error message", isError = true)
+
+    val logs = com.chiranth7.regibook.util.log.AppLogManager.getLogs(context)
+    assertEquals(2, logs.size)
+    assertEquals("TEST_TAG", logs[0].tag)
+    assertFalse(logs[0].isError)
+    assertEquals("ERROR_TAG", logs[1].tag)
+    assertTrue(logs[1].isError)
+
+    val formatted = com.chiranth7.regibook.util.log.AppLogManager.getFormattedLogs(context)
+    assertTrue(formatted.contains("[INFO] [TEST_TAG]"))
+    assertTrue(formatted.contains("Sample info message"))
+    assertTrue(formatted.contains("[ERROR] [ERROR_TAG]"))
+    assertTrue(formatted.contains("Sample error message"))
+
+    // Test retry scheduler doesn't crash
+    com.chiranth7.regibook.util.log.AppLogManager.scheduleRetryOnConnectivity(context)
+
+    com.chiranth7.regibook.util.log.AppLogManager.clearLogs(context)
+    assertTrue(com.chiranth7.regibook.util.log.AppLogManager.getLogs(context).isEmpty())
+  }
+
+  @Test
+  fun `test Discord payload format and offline queuing`() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val entry = com.chiranth7.regibook.util.log.AppLogEntry(
+        timestamp = System.currentTimeMillis(),
+        tag = "LicSync",
+        message = "Failed to sync: Connection timeout",
+        isError = true,
+        page = "lic_register",
+        location = "LicSyncManager.kt:76 (LicSyncManager.syncPolicies)",
+        isSentToRemote = false
+    )
+    val payloadJson = com.chiranth7.regibook.util.log.AppLogManager.buildDiscordPayload(context, entry)
+    assertTrue(payloadJson.contains("embeds"))
+    assertTrue(payloadJson.contains("LicSync"))
+    assertTrue(payloadJson.contains("lic_register"))
+    assertTrue(payloadJson.contains("LicSyncManager.kt:76"))
+    assertTrue(payloadJson.contains("Connection timeout"))
+
+    assertTrue(com.chiranth7.regibook.util.log.AppLogManager.DISCORD_WEBHOOK_URL.startsWith("https://discord.com/api/webhooks/"))
+  }
 }
+
+

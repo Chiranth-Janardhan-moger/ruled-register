@@ -24,10 +24,39 @@ import com.chiranth7.regibook.features.pigmi.viewmodel.PigmiViewModelFactory
 import com.chiranth7.regibook.ui.screens.RegisterNavGraph
 import com.chiranth7.regibook.ui.theme.RegisterBookTheme
 import com.chiranth7.regibook.util.RegisterType
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
+
+    override fun attachBaseContext(newBase: android.content.Context) {
+        val prefs = newBase.getSharedPreferences("register_book_settings", android.content.Context.MODE_PRIVATE)
+        val lang = prefs.getString("selected_language", "en") ?: "en"
+        val locale = Locale.forLanguageTag(lang)
+        Locale.setDefault(locale)
+        val config = Configuration(newBase.resources.configuration).apply {
+            setLocale(locale)
+            setLayoutDirection(locale)
+        }
+        val localizedContext = newBase.createConfigurationContext(config)
+        super.attachBaseContext(localizedContext)
+    }
+
+    override fun applyOverrideConfiguration(overrideConfiguration: Configuration?) {
+        if (overrideConfiguration != null) {
+            try {
+                val prefs = getSharedPreferences("register_book_settings", android.content.Context.MODE_PRIVATE)
+                val lang = prefs.getString("selected_language", "en") ?: "en"
+                val locale = Locale.forLanguageTag(lang)
+                overrideConfiguration.setLocale(locale)
+                overrideConfiguration.setLayoutDirection(locale)
+            } catch (_: Exception) {}
+        }
+        super.applyOverrideConfiguration(overrideConfiguration)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -46,19 +75,15 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        setContent {
-            val currentLang by app.settingsManager.currentLanguage.collectAsStateWithLifecycle()
-            val fontScale by app.settingsManager.fontScale.collectAsStateWithLifecycle()
+        // Automatic default cloud sync in background
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                com.chiranth7.regibook.features.lic.sync.LicSyncManager.syncPolicies(applicationContext, app.settingsManager)
+            } catch (_: Exception) {}
+        }
 
-            val locale = remember(currentLang) { Locale(currentLang) }
-            val baseConfig = LocalConfiguration.current
-            val configuration = remember(currentLang, fontScale, baseConfig) {
-                Configuration(baseConfig).apply {
-                    setLocale(locale)
-                    setLayoutDirection(locale)
-                    this.fontScale = fontScale
-                }
-            }
+        setContent {
+            val fontScale by app.settingsManager.fontScale.collectAsStateWithLifecycle()
 
             val currentDensity = LocalDensity.current
             val scaledDensity = remember(currentDensity.density, fontScale) {
@@ -69,12 +94,17 @@ class MainActivity : ComponentActivity() {
             }
 
             CompositionLocalProvider(
-                LocalConfiguration provides configuration,
                 LocalDensity provides scaledDensity
             ) {
                 RegisterBookTheme(darkTheme = false) {
                     Surface(modifier = Modifier.fillMaxSize()) {
                         val navController = rememberNavController()
+
+                        androidx.compose.runtime.LaunchedEffect(navController) {
+                            navController.addOnDestinationChangedListener { _, destination, _ ->
+                                com.chiranth7.regibook.util.log.AppLogManager.currentScreen = destination.route ?: "home"
+                            }
+                        }
 
                         val pigmiViewModel: PigmiViewModel = viewModel(
                             factory = PigmiViewModelFactory(app.pigmiRepository)

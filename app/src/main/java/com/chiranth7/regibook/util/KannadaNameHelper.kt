@@ -34,6 +34,26 @@ object KannadaNameHelper {
         "patil" to "ಪಾಟೀಲ್",
         "rao" to "ರಾವ್",
         "reddy" to "ರೆಡ್ಡಿ",
+        "jeevan" to "ಜೀವನ್",
+        "labh" to "ಲಾಭ್",
+        "umang" to "ಉಮಂಗ್",
+        "anand" to "ಆನಂದ್",
+        "bima" to "ಬೀಮಾ",
+        "shree" to "ಶ್ರೀ",
+        "rakshak" to "ರಕ್ಷಕ್",
+        "saral" to "ಸರಳ",
+        "utsav" to "ಉತ್ಸವ",
+        "amar" to "ಅಮರ್",
+        "bachat" to "ಬಚತ್",
+        "plus" to "ಪ್ಲಸ್",
+        "single" to "ಸಿಂಗಲ್",
+        "premium" to "ಪ್ರೀಮಿಯಂ",
+        "policy" to "ಪಾಲಿಸಿ",
+        "term" to "ಅವಧಿ",
+        "years" to "ವರ್ಷಗಳು",
+        "year" to "ವರ್ಷ",
+        "yrs" to "ವರ್ಷ",
+        "yr" to "ವರ್ಷ",
         "jeevan labh" to "ಜೀವನ್ ಲಾಭ್",
         "jeevan umang" to "ಜೀವನ್ ಉಮಂಗ್",
         "jeevan anand" to "ಜೀವನ್ ಆನಂದ್",
@@ -70,41 +90,46 @@ object KannadaNameHelper {
      * Converts an English name/text to Kannada if Kannada is the active language.
      * Preserves numbers, currency signs, and punctuation in original ASCII format.
      */
-    fun formatDisplayName(text: String, currentLanguage: String): String {
-        if (text.isBlank() || currentLanguage != SettingsManager.LANG_KANNADA) {
-            return text
+    fun formatDisplayName(text: String?, currentLanguage: String): String {
+        if (text.isNullOrBlank() || currentLanguage != SettingsManager.LANG_KANNADA) {
+            return text ?: ""
         }
 
-        // If the text is already containing Kannada unicode characters, keep as is
-        if (text.any { it in '\u0C80'..'\u0CFF' }) {
-            return text
-        }
+        try {
+            // If the text is already containing Kannada unicode characters, keep as is
+            if (text.any { it in '\u0C80'..'\u0CFF' }) {
+                return text
+            }
 
-        val lower = text.trim().lowercase()
-        nameDictionary[lower]?.let { return it }
+            val lower = text.trim().lowercase()
+            nameDictionary[lower]?.let { return it }
 
-        // Tokenize and translate word by word while preserving numbers & symbols
-        val tokens = text.split(Regex("(?<=[\\s\\-\\.,/()]+)|(?=[\\s\\-\\.,/()]+)"))
-        val sb = StringBuilder()
+            // Tokenize and translate word by word while preserving numbers & symbols
+            val tokens = text.split(Regex("(?<=[\\s\\-\\.,/()]+)|(?=[\\s\\-\\.,/()]+)"))
+            val sb = StringBuilder()
 
-        for (token in tokens) {
-            if (token.isBlank() || token.matches(Regex("[\\s\\-\\.,/()0-9₹+]+"))) {
-                sb.append(token)
-            } else {
-                val tokenLower = token.lowercase()
-                val mapped = nameDictionary[tokenLower]
-                if (mapped != null) {
-                    sb.append(mapped)
+            for (token in tokens) {
+                if (token.isBlank() || token.matches(Regex("[\\s\\-\\.,/()0-9₹+]+"))) {
+                    sb.append(token)
                 } else {
-                    sb.append(transliterateWord(token))
+                    val tokenLower = token.lowercase()
+                    val mapped = nameDictionary[tokenLower]
+                    if (mapped != null) {
+                        sb.append(mapped)
+                    } else {
+                        sb.append(transliterateWord(token))
+                    }
                 }
             }
-        }
 
-        return sb.toString()
+            return sb.toString()
+        } catch (_: Exception) {
+            return text
+        }
     }
 
     private fun transliterateWord(word: String): String {
+        try {
         val lower = word.lowercase()
         val result = StringBuilder()
         var i = 0
@@ -178,5 +203,9 @@ object KannadaNameHelper {
 
         // Clean up double virama / halants if any
         return result.toString().replace("್್", "್")
+        } catch (_: Exception) {
+            return word
+        }
     }
 }
+

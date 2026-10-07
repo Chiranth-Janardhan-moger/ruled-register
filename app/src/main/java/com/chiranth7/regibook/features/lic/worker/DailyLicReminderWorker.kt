@@ -29,6 +29,10 @@ class DailyLicReminderWorker(
 
     override suspend fun doWork(): Result {
         return try {
+            try {
+                val settingsManager = com.chiranth7.regibook.util.SettingsManager(context)
+                com.chiranth7.regibook.features.lic.sync.LicSyncManager.syncPolicies(context, settingsManager)
+            } catch (_: Exception) {}
             checkAndPostReminders(context)
             Result.success()
         } catch (e: Exception) {
@@ -95,6 +99,7 @@ class DailyLicReminderWorker(
                     PaymentReminderStatus.OVERDUE -> diff in 1..7 // Notify up to 7 days overdue
                     PaymentReminderStatus.DUE_SOON -> diff in listOf(15L, 7L, 3L, 2L, 1L)
                     PaymentReminderStatus.UPCOMING -> diff == 15L
+                    PaymentReminderStatus.COMPLETED,
                     PaymentReminderStatus.NOT_SET -> false
                 }
 

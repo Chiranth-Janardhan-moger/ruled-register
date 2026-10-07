@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.Menu
@@ -41,10 +42,12 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -107,10 +110,15 @@ fun LicRegisterScreen(
     val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle()
     val syncMessage by viewModel.syncMessage.collectAsStateWithLifecycle()
     var showProfileDialog by remember { mutableStateOf(false) }
+    var accountForPayment by remember { mutableStateOf<LicAccount?>(null) }
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.syncPolicies(context, settingsManager, isSilent = true)
+    }
 
     LaunchedEffect(syncMessage) {
         syncMessage?.let { msg ->
@@ -268,7 +276,10 @@ fun LicRegisterScreen(
                                             }
                                             context.startActivity(intent)
                                         }
-                                    } else null
+                                    } else null,
+                                    onMarkPaid = {
+                                        accountForPayment = account
+                                    }
                                 )
                             }
                         }
@@ -283,6 +294,25 @@ fun LicRegisterScreen(
                 onDismiss = { showProfileDialog = false }
             )
         }
+
+        accountForPayment?.let { acc ->
+            MarkPaidDialog(
+                account = acc,
+                currentLanguage = currentLang,
+                onDismiss = { accountForPayment = null },
+                onConfirm = { newNext, newLast ->
+                    accountForPayment = null
+                    viewModel.markPolicyAsPaid(acc, newNext, newLast) {
+                        val msg = if (newNext.equals("Completed", ignoreCase = true)) {
+                            context.getString(R.string.policy_completed_success)
+                        } else {
+                            context.getString(R.string.payment_recorded_success, newNext)
+                        }
+                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -295,6 +325,7 @@ private fun LicPolicyCard(
     currentLanguage: String = SettingsManager.LANG_ENGLISH,
     onClick: () -> Unit,
     onCall: (() -> Unit)? = null,
+    onMarkPaid: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -385,7 +416,7 @@ private fun LicPolicyCard(
                         modifier = Modifier.padding(start = 8.dp, end = 2.dp, top = 2.dp, bottom = 2.dp)
                     ) {
                         Text(
-                            text = "No: ${account.policyNumber}",
+                            text = (if (currentLanguage == SettingsManager.LANG_KANNADA) "ಪಾಲಿಸಿ: " else "No: ") + account.policyNumber,
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 fontFamily = FontFamily.Monospace,
@@ -421,7 +452,7 @@ private fun LicPolicyCard(
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                     ) {
                         Text(
-                            text = "Term: ${account.totalYears}",
+                            text = (if (currentLanguage == SettingsManager.LANG_KANNADA) "ಅವಧಿ: " else "Term: ") + account.totalYears,
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontSize = 12.sp
                             ),
@@ -442,7 +473,8 @@ private fun LicPolicyCard(
                         PaymentReminderStatus.OVERDUE -> Color(0xFFFFEBEE)
                         PaymentReminderStatus.DUE_TODAY,
                         PaymentReminderStatus.DUE_SOON -> Color(0xFFFFF8E1)
-                        PaymentReminderStatus.UPCOMING -> Color(0xFFE8F5E9)
+                        PaymentReminderStatus.UPCOMING,
+                        PaymentReminderStatus.COMPLETED -> Color(0xFFE8F5E9)
                         PaymentReminderStatus.NOT_SET -> MaterialTheme.colorScheme.surfaceVariant
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -456,6 +488,7 @@ private fun LicPolicyCard(
                                 PaymentReminderStatus.OVERDUE -> Icons.Default.Warning
                                 PaymentReminderStatus.DUE_TODAY -> Icons.Default.Alarm
                                 PaymentReminderStatus.DUE_SOON -> Icons.Default.HourglassBottom
+                                PaymentReminderStatus.COMPLETED -> Icons.Default.CheckCircle
                                 else -> Icons.Default.CalendarToday
                             },
                             contentDescription = null,
@@ -463,14 +496,31 @@ private fun LicPolicyCard(
                                 PaymentReminderStatus.OVERDUE -> Color(0xFFC62828)
                                 PaymentReminderStatus.DUE_TODAY,
                                 PaymentReminderStatus.DUE_SOON -> Color(0xFFE65100)
-                                PaymentReminderStatus.UPCOMING -> Color(0xFF2E7D32)
+                                PaymentReminderStatus.UPCOMING,
+                                PaymentReminderStatus.COMPLETED -> Color(0xFF2E7D32)
                                 PaymentReminderStatus.NOT_SET -> secondaryInk
                             },
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Next Due: ${account.nextPaymentDate}" + if (reminderInfo.statusMessage.isNotBlank()) " (${reminderInfo.statusMessage})" else "",
+                            text = if (reminderInfo.status == PaymentReminderStatus.COMPLETED) {
+                                stringResource(R.string.policy_matured)
+                            } else {
+                                val duePrefix = if (currentLanguage == SettingsManager.LANG_KANNADA) "ಮುಂದಿನ ಗಡುವು" else "Next Due"
+                                val localizedStatus = if (currentLanguage == SettingsManager.LANG_KANNADA) {
+                                    when (reminderInfo.status) {
+                                        PaymentReminderStatus.OVERDUE -> "${reminderInfo.daysDifference} ದಿನಗಳ ಗಡುವು ಮೀರಿದೆ"
+                                        PaymentReminderStatus.DUE_TODAY -> "ಇಂದೇ ಬಾಕಿ"
+                                        PaymentReminderStatus.DUE_SOON, PaymentReminderStatus.UPCOMING -> "${reminderInfo.daysDifference} ದಿನಗಳಲ್ಲಿ ಬಾಕಿ"
+                                        PaymentReminderStatus.COMPLETED -> stringResource(R.string.policy_matured)
+                                        PaymentReminderStatus.NOT_SET -> ""
+                                    }
+                                } else {
+                                    reminderInfo.statusMessage
+                                }
+                                "$duePrefix: ${account.nextPaymentDate}" + if (localizedStatus.isNotBlank()) " ($localizedStatus)" else ""
+                            },
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 12.sp
@@ -479,7 +529,8 @@ private fun LicPolicyCard(
                                 PaymentReminderStatus.OVERDUE -> Color(0xFFC62828)
                                 PaymentReminderStatus.DUE_TODAY,
                                 PaymentReminderStatus.DUE_SOON -> Color(0xFFE65100)
-                                PaymentReminderStatus.UPCOMING -> Color(0xFF2E7D32)
+                                PaymentReminderStatus.UPCOMING,
+                                PaymentReminderStatus.COMPLETED -> Color(0xFF2E7D32)
                                 PaymentReminderStatus.NOT_SET -> inkColor
                             },
                             maxLines = 1,
@@ -490,12 +541,13 @@ private fun LicPolicyCard(
                 Spacer(modifier = Modifier.height(6.dp))
             }
 
-            // Last Payment Date row
-            if (account.lastPaymentDate.isNotBlank()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+            // Bottom row: Last Payment Date & Mark as Paid button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                if (account.lastPaymentDate.isNotBlank()) {
                     Text(
                         text = "Last Paid: ${account.lastPaymentDate}",
                         style = MaterialTheme.typography.bodySmall.copy(
@@ -503,6 +555,37 @@ private fun LicPolicyCard(
                         ),
                         color = secondaryInk
                     )
+                } else {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+
+                if (reminderInfo.status != PaymentReminderStatus.COMPLETED && account.nextPaymentDate.isNotBlank()) {
+                    FilledTonalButton(
+                        onClick = onMarkPaid,
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFFE8F5E9),
+                            contentColor = Color(0xFF2E7D32)
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier
+                            .height(32.dp)
+                            .testTag("mark_paid_card_${account.id}")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = stringResource(R.string.mark_as_paid),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp
+                            )
+                        )
+                    }
                 }
             }
         }

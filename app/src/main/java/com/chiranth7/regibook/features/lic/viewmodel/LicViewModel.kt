@@ -54,7 +54,8 @@ class LicViewModel(
     fun syncPolicies(
         context: android.content.Context,
         settingsManager: com.chiranth7.regibook.util.SettingsManager,
-        customUrl: String? = null
+        customUrl: String? = null,
+        isSilent: Boolean = false
     ) {
         if (_isSyncing.value) return
         _isSyncing.value = true
@@ -65,15 +66,17 @@ class LicViewModel(
                 customUrl = customUrl
             )
             _isSyncing.value = false
-            when (result) {
-                is com.chiranth7.regibook.features.lic.sync.LicSyncManager.SyncResult.Success -> {
-                    _syncMessage.value = context.getString(
-                        com.chiranth7.regibook.R.string.sync_success,
-                        result.count
-                    )
-                }
-                is com.chiranth7.regibook.features.lic.sync.LicSyncManager.SyncResult.Error -> {
-                    _syncMessage.value = context.getString(com.chiranth7.regibook.R.string.sync_failed)
+            if (!isSilent) {
+                when (result) {
+                    is com.chiranth7.regibook.features.lic.sync.LicSyncManager.SyncResult.Success -> {
+                        _syncMessage.value = context.getString(
+                            com.chiranth7.regibook.R.string.sync_success,
+                            result.count
+                        )
+                    }
+                    is com.chiranth7.regibook.features.lic.sync.LicSyncManager.SyncResult.Error -> {
+                        _syncMessage.value = context.getString(com.chiranth7.regibook.R.string.sync_failed)
+                    }
                 }
             }
         }
@@ -313,6 +316,22 @@ class LicViewModel(
                 _selectedAccountId.value = null
             }
             onSuccess()
+        }
+    }
+
+    fun markPolicyAsPaid(
+        account: LicAccount,
+        newNextPaymentDate: String,
+        newLastPaymentDate: String,
+        onSuccess: (() -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            val updated = account.copy(
+                nextPaymentDate = newNextPaymentDate,
+                lastPaymentDate = newLastPaymentDate
+            )
+            repository.update(updated)
+            onSuccess?.invoke()
         }
     }
 }

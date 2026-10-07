@@ -90,4 +90,23 @@
     <string name="text_size_sample_lic">739558210 • Chiranth Moger • ₹11,873</string>
     <string name="decrease_text_size">Decrease text size</string>
     <string name="increase_text_size">Increase text size</string>
+    <string name="mark_as_paid">Mark as Paid</string>
+    <string name="mark_paid_confirm_title">Mark Premium as Paid</string>
+    <string name="current_due_date">Current Due Date</string>
+    <string name="new_next_due_date">New Due Date (+1 Year)</string>
+    <string name="payment_date">Payment Date</string>
+    <string name="final_payment_matured">Final Payment (Policy Matured)</string>
+    <string name="confirm_payment">Confirm Payment</string>
+    <string name="policy_matured">Policy Matured</string>
+    <string name="payment_recorded_success">Payment recorded! Next due date: %s</string>
+    <string name="policy_completed_success">Payment recorded! Policy is now fully paid and matured.</string>
+    <string name="auto_sync_status">Auto-Sync: Active (Background)</string>
+    <string name="auto_sync_description">Policies automatically sync silently on launch and daily in background</string>
+    <string name="view_diagnostics_log">View Sync &amp; Error Logs</string>
+    <string name="diagnostics_log_title">Diagnostics &amp; Sync Log</string>
+    <string name="copy_log">Copy Log</string>
+    <string name="clear_log">Clear</string>
+    <string name="log_copied">Log copied to clipboard</string>
+    <string name="close">Close</string>
+    <string name="logs">Logs</string>
 </resources>

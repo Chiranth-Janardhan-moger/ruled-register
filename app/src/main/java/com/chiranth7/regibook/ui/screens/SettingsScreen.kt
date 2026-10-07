@@ -23,7 +23,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CardMembership
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.MenuBook
@@ -52,9 +54,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.widget.Toast
 import com.chiranth7.regibook.features.lic.sync.LicSyncManager
+import com.chiranth7.regibook.util.log.AppLogManager
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -95,6 +100,9 @@ fun SettingsScreen(
 
     var showAddTypeDialog by remember { mutableStateOf(false) }
     var showEditSyncUrlDialog by remember { mutableStateOf(false) }
+    var showLogDialog by remember { mutableStateOf(false) }
+    var currentLogText by remember { mutableStateOf("") }
+    val clipboardManager = LocalClipboardManager.current
     var syncUrlInput by remember { mutableStateOf("") }
     var isSyncingPolicies by remember { mutableStateOf(false) }
 
@@ -153,6 +161,106 @@ fun SettingsScreen(
             dismissButton = {
                 TextButton(onClick = { showEditSyncUrlDialog = false }) {
                     Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    // Dialog to view diagnostics & sync logs
+    if (showLogDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Description,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.diagnostics_log_title),
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "Errors and crashes are automatically sent to your Discord channel. Offline events are queued and delivered when connected.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = secondaryInk
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(260.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(10.dp)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            Text(
+                                text = currentLogText,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 11.sp,
+                                    lineHeight = 16.sp
+                                ),
+                                color = inkColor
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        clipboardManager.setText(AnnotatedString(currentLogText))
+                        Toast.makeText(context, context.getString(R.string.log_copied), Toast.LENGTH_SHORT).show()
+                    }
+                ) {
+                    Text(stringResource(R.string.copy_log))
+                }
+            },
+            dismissButton = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                val sent = AppLogManager.sendTestAlert(context)
+                                Toast.makeText(
+                                    context,
+                                    if (sent) "Test alert sent to Discord!" else "Failed to send test alert. Check internet.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                currentLogText = AppLogManager.getFormattedLogs(context)
+                            }
+                        }
+                    ) {
+                        Text("Test Discord")
+                    }
+                    TextButton(
+                        onClick = {
+                            AppLogManager.clearLogs(context)
+                            currentLogText = AppLogManager.getFormattedLogs(context)
+                        }
+                    ) {
+                        Text(stringResource(R.string.clear_log), color = MaterialTheme.colorScheme.error)
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    TextButton(onClick = { showLogDialog = false }) {
+                        Text(stringResource(R.string.close))
+                    }
                 }
             }
         )
@@ -431,14 +539,24 @@ fun SettingsScreen(
                 SettingOptionRow(
                     title = "English",
                     isSelected = currentLang == SettingsManager.LANG_ENGLISH,
-                    onClick = { settingsManager.setLanguage(SettingsManager.LANG_ENGLISH) },
+                    onClick = {
+                        if (currentLang != SettingsManager.LANG_ENGLISH) {
+                            settingsManager.setLanguage(SettingsManager.LANG_ENGLISH)
+                            (context as? android.app.Activity)?.recreate()
+                        }
+                    },
                     testTag = "language_option_english"
                 )
 
                 SettingOptionRow(
                     title = "ಕನ್ನಡ",
                     isSelected = currentLang == SettingsManager.LANG_KANNADA,
-                    onClick = { settingsManager.setLanguage(SettingsManager.LANG_KANNADA) },
+                    onClick = {
+                        if (currentLang != SettingsManager.LANG_KANNADA) {
+                            settingsManager.setLanguage(SettingsManager.LANG_KANNADA)
+                            (context as? android.app.Activity)?.recreate()
+                        }
+                    },
                     testTag = "language_option_kannada"
                 )
 
@@ -463,7 +581,10 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.CloudSync,
                                 contentDescription = null,
@@ -471,23 +592,52 @@ fun SettingsScreen(
                                 modifier = Modifier.size(24.dp)
                             )
                             Spacer(modifier = Modifier.width(10.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.cloud_sync_title),
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontFamily = FontFamily.Serif,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp
-                                    ),
-                                    color = inkColor
-                                )
-                                Text(
-                                    text = stringResource(R.string.cloud_sync_subtitle),
-                                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Serif),
-                                    color = secondaryInk
-                                )
+                            Text(
+                                text = stringResource(R.string.cloud_sync_title),
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontFamily = FontFamily.Serif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                ),
+                                color = inkColor,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            // Auto-Sync Active Pill Badge
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Auto-Sync Active",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 10.sp
+                                        ),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Text(
+                            text = stringResource(R.string.auto_sync_description),
+                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Serif),
+                            color = secondaryInk
+                        )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
@@ -547,40 +697,66 @@ fun SettingsScreen(
                             color = secondaryInk
                         )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                        Button(
-                            onClick = {
-                                isSyncingPolicies = true
-                                coroutineScope.launch {
-                                    val result = LicSyncManager.syncPolicies(context, settingsManager)
-                                    isSyncingPolicies = false
-                                    when (result) {
-                                        is LicSyncManager.SyncResult.Success -> {
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.sync_success, result.count),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                        is LicSyncManager.SyncResult.Error -> {
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.sync_failed),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Button(
+                                onClick = {
+                                    isSyncingPolicies = true
+                                    coroutineScope.launch {
+                                        val result = LicSyncManager.syncPolicies(context, settingsManager)
+                                        isSyncingPolicies = false
+                                        when (result) {
+                                            is LicSyncManager.SyncResult.Success -> {
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(R.string.sync_success, result.count),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                            is LicSyncManager.SyncResult.Error -> {
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(R.string.sync_failed),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
                                         }
                                     }
+                                },
+                                enabled = !isSyncingPolicies,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = if (isSyncingPolicies) stringResource(R.string.syncing_policies) else stringResource(R.string.sync_now),
+                                    fontFamily = FontFamily.Serif,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            OutlinedButton(
+                                onClick = {
+                                    currentLogText = AppLogManager.getFormattedLogs(context)
+                                    showLogDialog = true
                                 }
-                            },
-                            enabled = !isSyncingPolicies,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = if (isSyncingPolicies) stringResource(R.string.syncing_policies) else stringResource(R.string.sync_now),
-                                fontFamily = FontFamily.Serif,
-                                fontWeight = FontWeight.Medium
-                            )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Description,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = stringResource(R.string.logs),
+                                    fontFamily = FontFamily.Serif,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
                         }
                     }
                 }
@@ -605,112 +781,70 @@ fun SettingsScreen(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.FormatSize,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FormatSize,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.text_size_title),
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontFamily = FontFamily.Serif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                ),
+                                color = inkColor
                             )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.text_size_title),
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontFamily = FontFamily.Serif,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp
-                                    ),
-                                    color = inkColor
-                                )
-                                val percent = Math.round(fontScale * 100)
-                                Text(
-                                    text = "$percent%",
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontFamily = FontFamily.Monospace,
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-
-                            // - button
-                            FilledTonalIconButton(
-                                onClick = { settingsManager.decreaseFontScale() },
-                                enabled = fontScale > SettingsManager.MIN_FONT_SCALE + 0.01f,
-                                modifier = Modifier
-                                    .size(42.dp)
-                                    .testTag("decrease_font_size_button")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Remove,
-                                    contentDescription = stringResource(R.string.decrease_text_size),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            // + button
-                            FilledTonalIconButton(
-                                onClick = { settingsManager.increaseFontScale() },
-                                enabled = fontScale < SettingsManager.MAX_FONT_SCALE - 0.01f,
-                                modifier = Modifier
-                                    .size(42.dp)
-                                    .testTag("increase_font_size_button")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = stringResource(R.string.increase_text_size),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
+                            val percent = Math.round(fontScale * 100)
+                            Text(
+                                text = "$percent%",
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
 
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        // Live Sample Text Preview Box
-                        Text(
-                            text = stringResource(R.string.text_size_preview).uppercase(),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 11.sp
-                            ),
-                            color = secondaryInk
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
-                            modifier = Modifier.fillMaxWidth()
+                        // - button
+                        FilledTonalIconButton(
+                            onClick = { settingsManager.decreaseFontScale() },
+                            enabled = fontScale > SettingsManager.MIN_FONT_SCALE + 0.01f,
+                            modifier = Modifier
+                                .size(42.dp)
+                                .testTag("decrease_font_size_button")
                         ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
-                                Text(
-                                    text = "Pigmi: " + stringResource(R.string.text_size_sample_pigmi),
-                                    style = MaterialTheme.typography.bodyLarge.copy(
-                                        fontFamily = FontFamily.Serif,
-                                        fontWeight = FontWeight.Normal,
-                                        fontSize = 17.sp * fontScale
-                                    ),
-                                    color = inkColor
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Text(
-                                    text = "LIC: " + stringResource(R.string.text_size_sample_lic),
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontFamily = FontFamily.Serif,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = 15.sp * fontScale
-                                    ),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Default.Remove,
+                                contentDescription = stringResource(R.string.decrease_text_size),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        // + button
+                        FilledTonalIconButton(
+                            onClick = { settingsManager.increaseFontScale() },
+                            enabled = fontScale < SettingsManager.MAX_FONT_SCALE - 0.01f,
+                            modifier = Modifier
+                                .size(42.dp)
+                                .testTag("increase_font_size_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = stringResource(R.string.increase_text_size),
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
                 }
