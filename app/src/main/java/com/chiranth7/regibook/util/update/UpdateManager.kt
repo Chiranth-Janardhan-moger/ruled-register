@@ -56,7 +56,27 @@ class UpdateManager(
         throw Exception("Too many redirects")
     }
 
+    private fun isOnline(): Boolean {
+        return try {
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+            val network = cm?.activeNetwork ?: return false
+            val capabilities = cm.getNetworkCapabilities(network) ?: return false
+            capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        } catch (_: Exception) {
+            true
+        }
+    }
+
     suspend fun checkForUpdates(isManualCheck: Boolean = false) {
+        if (!isOnline()) {
+            _updateState.value = if (isManualCheck) {
+                UpdateState.Error(context.getString(com.chiranth7.regibook.R.string.no_internet_connection))
+            } else {
+                UpdateState.Idle
+            }
+            return
+        }
+
         _updateState.value = UpdateState.Checking
         withContext(Dispatchers.IO) {
             var connection: HttpURLConnection? = null
@@ -74,7 +94,12 @@ class UpdateManager(
                         return@withContext
                     }
                     if (isManualCheck) {
-                        _updateState.value = UpdateState.Error("Failed to check for updates (HTTP $responseCode)")
+                        val message = if (!isOnline() || responseCode == 403) {
+                            context.getString(com.chiranth7.regibook.R.string.no_internet_connection)
+                        } else {
+                            "Failed to check for updates (Server busy)"
+                        }
+                        _updateState.value = UpdateState.Error(message)
                     } else {
                         _updateState.value = UpdateState.Idle
                     }
@@ -118,7 +143,7 @@ class UpdateManager(
                 }
             } catch (e: Exception) {
                 _updateState.value = if (isManualCheck) {
-                    UpdateState.Error(e.localizedMessage ?: "Network error while checking updates")
+                    UpdateState.Error(context.getString(com.chiranth7.regibook.R.string.no_internet_connection))
                 } else {
                     UpdateState.Idle
                 }

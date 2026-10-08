@@ -78,6 +78,7 @@
     <string name="syncing_policies">Syncing policies from cloud…</string>
     <string name="sync_success">Synced %d policies successfully</string>
     <string name="sync_failed">Sync failed. Using offline policies.</string>
+    <string name="no_internet_connection">No internet connection. Please check your network and try again.</string>
     <string name="cloud_sync_url">Cloud Sync URL</string>
     <string name="cloud_sync_title">Policy Cloud Sync</string>
     <string name="cloud_sync_subtitle">Sync policies from Private Gist or remote JSON</string>
@@ -91,6 +92,10 @@
     <string name="decrease_text_size">Decrease text size</string>
     <string name="increase_text_size">Increase text size</string>
     <string name="mark_as_paid">Mark as Paid</string>
+    <string name="mark_as_notified">Mark as Notified</string>
+    <string name="marked_as_notified">Customer marked as notified</string>
+    <string name="unmarked_as_notified">Notification reminder re-enabled</string>
+    <string name="notified">Notified</string>
     <string name="mark_paid_confirm_title">Mark Premium as Paid</string>
     <string name="current_due_date">Current Due Date</string>
     <string name="new_next_due_date">New Due Date (+1 Year)</string>

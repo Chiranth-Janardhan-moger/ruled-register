@@ -103,6 +103,29 @@ class SettingsManager(context: Context) {
 
     fun getLocale(): Locale = Locale(_currentLanguage.value)
 
+    // Policy Notified Status (Silences reminders for current due cycle)
+    fun getNotifiedPolicyKey(policyNumber: String, dueDate: String): String =
+        "${policyNumber.trim()}_${dueDate.trim()}"
+
+    fun isPolicyNotified(policyNumber: String, dueDate: String): Boolean {
+        if (policyNumber.isBlank() || dueDate.isBlank()) return false
+        val key = getNotifiedPolicyKey(policyNumber, dueDate)
+        val set = prefs.getStringSet(KEY_NOTIFIED_POLICIES, emptySet()) ?: emptySet()
+        return set.contains(key)
+    }
+
+    fun setPolicyNotified(policyNumber: String, dueDate: String, notified: Boolean) {
+        if (policyNumber.isBlank() || dueDate.isBlank()) return
+        val key = getNotifiedPolicyKey(policyNumber, dueDate)
+        val currentSet = prefs.getStringSet(KEY_NOTIFIED_POLICIES, emptySet())?.toMutableSet() ?: mutableSetOf()
+        if (notified) {
+            currentSet.add(key)
+        } else {
+            currentSet.remove(key)
+        }
+        prefs.edit().putStringSet(KEY_NOTIFIED_POLICIES, currentSet).apply()
+    }
+
     companion object {
         private const val PREFS_NAME = "register_book_settings"
         private const val KEY_LANGUAGE = "selected_language"
@@ -111,6 +134,7 @@ class SettingsManager(context: Context) {
         private const val KEY_POLICY_SYNC_URL = "lic_policy_sync_url"
         private const val KEY_LAST_SYNC_TIMESTAMP = "lic_last_sync_timestamp"
         private const val KEY_FONT_SCALE = "app_font_scale"
+        private const val KEY_NOTIFIED_POLICIES = "notified_policy_keys"
 
         const val DEFAULT_AGENT_CODE = "LIC0246463V"
         const val DEFAULT_POLICY_SYNC_URL = "https://raw.githubusercontent.com/Chiranth-Janardhan-moger/ruled-register/main/policies-sync.json"

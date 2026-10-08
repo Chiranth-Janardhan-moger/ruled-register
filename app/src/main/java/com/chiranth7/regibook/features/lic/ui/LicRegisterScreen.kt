@@ -276,10 +276,7 @@ fun LicRegisterScreen(
                                             }
                                             context.startActivity(intent)
                                         }
-                                    } else null,
-                                    onMarkPaid = {
-                                        accountForPayment = account
-                                    }
+                                    } else null
                                 )
                             }
                         }
@@ -325,7 +322,6 @@ private fun LicPolicyCard(
     currentLanguage: String = SettingsManager.LANG_ENGLISH,
     onClick: () -> Unit,
     onCall: (() -> Unit)? = null,
-    onMarkPaid: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -354,33 +350,18 @@ private fun LicPolicyCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = KannadaNameHelper.formatDisplayName(account.name, currentLanguage),
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        ),
-                        color = inkColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    if (account.policyName.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = KannadaNameHelper.formatDisplayName(account.policyName, currentLanguage),
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 13.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
+                Text(
+                    text = KannadaNameHelper.formatDisplayName(account.name, currentLanguage),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    ),
+                    color = inkColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
 
                 if (onCall != null) {
                     IconButton(
@@ -399,74 +380,51 @@ private fun LicPolicyCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Tags row: Policy Number & Total Years
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+            // Policy Number
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant
             ) {
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 8.dp, end = 2.dp, top = 2.dp, bottom = 2.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(start = 8.dp, end = 2.dp, top = 2.dp, bottom = 2.dp)
+                    Text(
+                        text = (if (currentLanguage == SettingsManager.LANG_KANNADA) "ಪಾಲಿಸಿ: " else "No: ") + account.policyNumber,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 12.sp
+                        ),
+                        color = inkColor
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    IconButton(
+                        onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val clip = ClipData.newPlainText("Policy Number", account.policyNumber)
+                            clipboard.setPrimaryClip(clip)
+                            Toast.makeText(context, context.getString(R.string.policy_number_copied), Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier
+                            .size(24.dp)
+                            .testTag("copy_policy_no_${account.id}")
                     ) {
-                        Text(
-                            text = (if (currentLanguage == SettingsManager.LANG_KANNADA) "ಪಾಲಿಸಿ: " else "No: ") + account.policyNumber,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 12.sp
-                            ),
-                            color = inkColor
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
-                        IconButton(
-                            onClick = {
-                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                val clip = ClipData.newPlainText("Policy Number", account.policyNumber)
-                                clipboard.setPrimaryClip(clip)
-                                Toast.makeText(context, context.getString(R.string.policy_number_copied), Toast.LENGTH_SHORT).show()
-                            },
-                            modifier = Modifier
-                                .size(24.dp)
-                                .testTag("copy_policy_no_${account.id}")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ContentCopy,
-                                contentDescription = stringResource(R.string.copy),
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(13.dp)
-                            )
-                        }
-                    }
-                }
-
-                if (account.totalYears.isNotBlank()) {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-                    ) {
-                        Text(
-                            text = (if (currentLanguage == SettingsManager.LANG_KANNADA) "ಅವಧಿ: " else "Term: ") + account.totalYears,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 12.sp
-                            ),
-                            color = secondaryInk,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = stringResource(R.string.copy),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(13.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-
             // Next Payment Reminder Badge (if set)
             if (account.nextPaymentDate.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = when (reminderInfo.status) {
@@ -538,55 +496,18 @@ private fun LicPolicyCard(
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(6.dp))
             }
 
-            // Bottom row: Last Payment Date & Mark as Paid button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                if (account.lastPaymentDate.isNotBlank()) {
-                    Text(
-                        text = "Last Paid: ${account.lastPaymentDate}",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 12.sp
-                        ),
-                        color = secondaryInk
-                    )
-                } else {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-
-                if (reminderInfo.status != PaymentReminderStatus.COMPLETED && account.nextPaymentDate.isNotBlank()) {
-                    FilledTonalButton(
-                        onClick = onMarkPaid,
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = Color(0xFFE8F5E9),
-                            contentColor = Color(0xFF2E7D32)
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        modifier = Modifier
-                            .height(32.dp)
-                            .testTag("mark_paid_card_${account.id}")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(R.string.mark_as_paid),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
-                            )
-                        )
-                    }
-                }
+            // Last Payment Date
+            if (account.lastPaymentDate.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = (if (currentLanguage == SettingsManager.LANG_KANNADA) "ಕೊನೆಯ ಪಾವತಿ: " else "Last Paid: ") + account.lastPaymentDate,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontSize = 12.sp
+                    ),
+                    color = secondaryInk
+                )
             }
         }
     }

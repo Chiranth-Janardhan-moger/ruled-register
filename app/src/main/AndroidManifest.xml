@@ -38,6 +38,13 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+        <receiver
+            android:name=".features.lic.receiver.MarkNotifiedReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.chiranth7.regibook.ACTION_MARK_NOTIFIED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

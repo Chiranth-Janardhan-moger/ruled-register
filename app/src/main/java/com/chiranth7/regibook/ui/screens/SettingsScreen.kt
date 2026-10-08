@@ -23,14 +23,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CardMembership
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -40,7 +36,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Surface
@@ -61,15 +56,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.widget.Toast
-import com.chiranth7.regibook.features.lic.sync.LicSyncManager
 import com.chiranth7.regibook.util.log.AppLogManager
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chiranth7.regibook.BuildConfig
@@ -93,18 +83,13 @@ fun SettingsScreen(
     val currentLang by settingsManager.currentLanguage.collectAsStateWithLifecycle()
     val fontScale by settingsManager.fontScale.collectAsStateWithLifecycle()
     val updateState by updateManager.updateState.collectAsStateWithLifecycle()
-    val syncUrl by settingsManager.policySyncUrl.collectAsStateWithLifecycle()
-    val lastSyncTime by settingsManager.lastSyncTimestamp.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
     var showAddTypeDialog by remember { mutableStateOf(false) }
-    var showEditSyncUrlDialog by remember { mutableStateOf(false) }
     var showLogDialog by remember { mutableStateOf(false) }
     var currentLogText by remember { mutableStateOf("") }
     val clipboardManager = LocalClipboardManager.current
-    var syncUrlInput by remember { mutableStateOf("") }
-    var isSyncingPolicies by remember { mutableStateOf(false) }
 
     val inkColor = MaterialTheme.colorScheme.onBackground
     val secondaryInk = MaterialTheme.colorScheme.onSurfaceVariant
@@ -114,56 +99,6 @@ fun SettingsScreen(
     BackHandler(enabled = !isNavigatingBack) {
         isNavigatingBack = true
         onNavigateBack()
-    }
-
-    // Dialog to edit sync URL
-    if (showEditSyncUrlDialog) {
-        AlertDialog(
-            onDismissRequest = { showEditSyncUrlDialog = false },
-            title = { Text(stringResource(R.string.cloud_sync_url)) },
-            text = {
-                Column {
-                    Text(
-                        text = "Enter raw URL of your Private GitHub Gist or online JSON file containing customer policies:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = secondaryInk
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    OutlinedTextField(
-                        value = syncUrlInput,
-                        onValueChange = { syncUrlInput = it },
-                        placeholder = { Text("https://gist.githubusercontent.com/.../raw/...") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = false,
-                        maxLines = 4
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    TextButton(
-                        onClick = {
-                            syncUrlInput = SettingsManager.DEFAULT_POLICY_SYNC_URL
-                        }
-                    ) {
-                        Text("Reset to Default URL")
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        settingsManager.setPolicySyncUrl(syncUrlInput)
-                        showEditSyncUrlDialog = false
-                        Toast.makeText(context, "Sync URL saved", Toast.LENGTH_SHORT).show()
-                    }
-                ) {
-                    Text(stringResource(R.string.save))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showEditSyncUrlDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
     }
 
     // Dialog to view diagnostics & sync logs
@@ -560,209 +495,6 @@ fun SettingsScreen(
                     testTag = "language_option_kannada"
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Section 2.5: Policy Cloud Sync
-                Text(
-                    text = stringResource(R.string.cloud_sync_title).uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = secondaryInk,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CloudSync,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = stringResource(R.string.cloud_sync_title),
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontFamily = FontFamily.Serif,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
-                                ),
-                                color = inkColor,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            // Auto-Sync Active Pill Badge
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.CheckCircle,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = "Auto-Sync Active",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 10.sp
-                                        ),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Text(
-                            text = stringResource(R.string.auto_sync_description),
-                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Serif),
-                            color = secondaryInk
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // URL Display and Edit
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    syncUrlInput = syncUrl
-                                    showEditSyncUrlDialog = true
-                                }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = stringResource(R.string.cloud_sync_url),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = secondaryInk
-                                    )
-                                    Text(
-                                        text = syncUrl.ifBlank { "Not configured" },
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            fontFamily = FontFamily.Monospace,
-                                            fontSize = 11.sp
-                                        ),
-                                        color = inkColor,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "Edit URL",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        val lastSyncText = if (lastSyncTime > 0) {
-                            val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
-                            stringResource(R.string.last_synced, sdf.format(Date(lastSyncTime)))
-                        } else {
-                            stringResource(R.string.never_synced)
-                        }
-
-                        Text(
-                            text = lastSyncText,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = secondaryInk
-                        )
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Button(
-                                onClick = {
-                                    isSyncingPolicies = true
-                                    coroutineScope.launch {
-                                        val result = LicSyncManager.syncPolicies(context, settingsManager)
-                                        isSyncingPolicies = false
-                                        when (result) {
-                                            is LicSyncManager.SyncResult.Success -> {
-                                                Toast.makeText(
-                                                    context,
-                                                    context.getString(R.string.sync_success, result.count),
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                            is LicSyncManager.SyncResult.Error -> {
-                                                Toast.makeText(
-                                                    context,
-                                                    context.getString(R.string.sync_failed),
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                        }
-                                    }
-                                },
-                                enabled = !isSyncingPolicies,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(
-                                    text = if (isSyncingPolicies) stringResource(R.string.syncing_policies) else stringResource(R.string.sync_now),
-                                    fontFamily = FontFamily.Serif,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            OutlinedButton(
-                                onClick = {
-                                    currentLogText = AppLogManager.getFormattedLogs(context)
-                                    showLogDialog = true
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Description,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = stringResource(R.string.logs),
-                                    fontFamily = FontFamily.Serif,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
                 // Section: Text Size
                 Text(
                     text = stringResource(R.string.text_size_title).uppercase(),
@@ -915,6 +647,28 @@ fun SettingsScreen(
                         ) {
                             Text(
                                 text = if (updateState is UpdateState.Checking) "Checking GitHub..." else "Check for Updates",
+                                fontFamily = FontFamily.Serif,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedButton(
+                            onClick = {
+                                currentLogText = AppLogManager.getFormattedLogs(context)
+                                showLogDialog = true
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Description,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = stringResource(R.string.view_diagnostics_log),
                                 fontFamily = FontFamily.Serif,
                                 fontWeight = FontWeight.Medium
                             )

@@ -21,11 +21,26 @@ object LicSyncManager {
         data class Error(val message: String) : SyncResult()
     }
 
+    private fun isOnline(context: Context): Boolean {
+        return try {
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+            val network = cm?.activeNetwork ?: return false
+            val capabilities = cm.getNetworkCapabilities(network) ?: return false
+            capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        } catch (_: Exception) {
+            true
+        }
+    }
+
     suspend fun syncPolicies(
         context: Context,
         settingsManager: SettingsManager,
         customUrl: String? = null
     ): SyncResult = withContext(Dispatchers.IO) {
+        if (!isOnline(context)) {
+            return@withContext SyncResult.Error(context.getString(com.chiranth7.regibook.R.string.no_internet_connection))
+        }
+
         val targetUrl = (customUrl ?: settingsManager.policySyncUrl.value).trim()
         if (targetUrl.isBlank()) {
             return@withContext SyncResult.Error("No sync URL configured")
@@ -74,7 +89,12 @@ object LicSyncManager {
             com.chiranth7.regibook.util.log.AppLogManager.log(context, "LicSync", "Synced $updatedCount policies successfully")
             SyncResult.Success(updatedCount)
         } catch (e: Exception) {
-            val errorMsg = e.message ?: "Failed to sync policies"
+            val isNetworkIssue = !isOnline(context) || e is java.io.IOException || e is java.net.UnknownHostException
+            val errorMsg = if (isNetworkIssue) {
+                context.getString(com.chiranth7.regibook.R.string.no_internet_connection)
+            } else {
+                e.message ?: "Failed to sync policies"
+            }
             com.chiranth7.regibook.util.log.AppLogManager.log(
                 context,
                 "LicSync",

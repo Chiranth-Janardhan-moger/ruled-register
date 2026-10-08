@@ -297,6 +297,123 @@ class ExampleRobolectricTest {
 
     assertTrue(com.chiranth7.regibook.util.log.AppLogManager.DISCORD_WEBHOOK_URL.startsWith("https://discord.com/api/webhooks/"))
   }
+
+  @Test
+  fun `test SettingsManager policy notified flag logic`() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val settingsManager = SettingsManager(context)
+
+    val policy = "739558210"
+    val due2026 = "28/06/2026"
+    val due2027 = "28/06/2027"
+
+    // Initially not notified
+    assertFalse(settingsManager.isPolicyNotified(policy, due2026))
+
+    // Set notified
+    settingsManager.setPolicyNotified(policy, due2026, true)
+    assertTrue(settingsManager.isPolicyNotified(policy, due2026))
+
+    // Next year cycle must be false (starts fresh on next due date)
+    assertFalse(settingsManager.isPolicyNotified(policy, due2027))
+
+    // Toggle off
+    settingsManager.setPolicyNotified(policy, due2026, false)
+    assertFalse(settingsManager.isPolicyNotified(policy, due2026))
+  }
+
+  @Test
+  fun `test urgency sorting ranks overdue first, then due soon, then upcoming`() {
+    val cal = Calendar.getInstance()
+    val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+
+    // Overdue: 10 days ago
+    cal.add(Calendar.DAY_OF_YEAR, -10)
+    val overdueDate = sdf.format(cal.time)
+
+    // Due soon: 3 days in future
+    cal.time = Date()
+    cal.add(Calendar.DAY_OF_YEAR, 3)
+    val dueSoonDate = sdf.format(cal.time)
+
+    // Upcoming: 30 days in future
+    cal.time = Date()
+    cal.add(Calendar.DAY_OF_YEAR, 30)
+    val upcomingDate = sdf.format(cal.time)
+
+    val overdueAccount = LicAccount(
+      id = 1L,
+      name = "Overdue Customer",
+      policyNumber = "POL-001",
+      nextPaymentDate = overdueDate
+    )
+    val dueSoonAccount = LicAccount(
+      id = 2L,
+      name = "Due Soon Customer",
+      policyNumber = "POL-002",
+      nextPaymentDate = dueSoonDate
+    )
+    val upcomingAccount = LicAccount(
+      id = 3L,
+      name = "Upcoming Customer",
+      policyNumber = "POL-003",
+      nextPaymentDate = upcomingDate
+    )
+
+    // Unsorted list
+    val list = listOf(upcomingAccount, overdueAccount, dueSoonAccount)
+
+    fun getUrgencyRank(status: PaymentReminderStatus): Int = when (status) {
+      PaymentReminderStatus.OVERDUE -> 0
+      PaymentReminderStatus.DUE_TODAY -> 1
+      PaymentReminderStatus.DUE_SOON -> 2
+      PaymentReminderStatus.UPCOMING -> 3
+      PaymentReminderStatus.NOT_SET -> 4
+      PaymentReminderStatus.COMPLETED -> 5
+    }
+
+    val sorted = list.sortedWith(
+      compareBy<LicAccount> { account ->
+        val reminder = PaymentReminderHelper.calculateReminder(account.nextPaymentDate)
+        getUrgencyRank(reminder.status)
+      }.thenBy { account ->
+        PaymentReminderHelper.parseDate(account.nextPaymentDate)?.time ?: Long.MAX_VALUE
+      }
+    )
+
+    assertEquals("POL-001", sorted[0].policyNumber) // Overdue first
+    assertEquals("POL-002", sorted[1].policyNumber) // Due soon second
+    assertEquals("POL-003", sorted[2].policyNumber) // Upcoming third
+  }
+
+  @Test
+  fun `test new strings for offline and notified`() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+
+    val offlineEn = context.getString(R.string.no_internet_connection)
+    assertTrue(offlineEn.contains("No internet"))
+
+    val markNotifiedEn = context.getString(R.string.mark_as_notified)
+    assertEquals("Mark as Notified", markNotifiedEn)
+
+    val notifiedEn = context.getString(R.string.notified)
+    assertEquals("Notified", notifiedEn)
+
+    // Kannada config
+    val config = Configuration(context.resources.configuration).apply {
+      setLocale(Locale("kn"))
+    }
+    val knContext = context.createConfigurationContext(config)
+
+    val offlineKn = knContext.getString(R.string.no_internet_connection)
+    assertFalse(offlineKn.isBlank())
+
+    val markNotifiedKn = knContext.getString(R.string.mark_as_notified)
+    assertFalse(markNotifiedKn.isBlank())
+
+    val notifiedKn = knContext.getString(R.string.notified)
+    assertFalse(notifiedKn.isBlank())
+  }
 }
 
 

@@ -79,6 +79,7 @@
     <string name="syncing_policies">ಕ್ಲೌಡ್‌ನಿಂದ ಪಾಲಿಸಿಗಳನ್ನು ನವೀಕರಿಸಲಾಗುತ್ತಿದೆ…</string>
     <string name="sync_success">%d ಪಾಲಿಸಿಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ನವೀಕರಿಸಲಾಗಿದೆ</string>
     <string name="sync_failed">ನವೀಕರಣ ವಿಫಲವಾಗಿದೆ. ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿರುವ ಪಾಲಿಸಿಗಳನ್ನು ಬಳಸಲಾಗುತ್ತಿದೆ.</string>
+    <string name="no_internet_connection">ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕವಿಲ್ಲ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ನೆಟ್‌ವರ್ಕ್ ಪರಿಶೀಲಿಸಿ.</string>
     <string name="cloud_sync_url">ಕ್ಲೌಡ್ ಸಿಂಕ್ ಲಿಂಕ್ (Sync URL)</string>
     <string name="cloud_sync_title">ಪಾಲಿಸಿ ಕ್ಲೌಡ್ ಸಿಂಕ್</string>
     <string name="cloud_sync_subtitle">ಆನ್‌ಲೈನ್ JSON ಅಥವಾ Private Gist ನಿಂದ ಪಾಲಿಸಿಗಳನ್ನು ಸಿಂಕ್ ಮಾಡಿ</string>
@@ -92,6 +93,10 @@
     <string name="decrease_text_size">ಅಕ್ಷರದ ಗಾತ್ರ ಕಡಿಮೆ ಮಾಡಿ</string>
     <string name="increase_text_size">ಅಕ್ಷರದ ಗಾತ್ರ ಹೆಚ್ಚಿಸಿ</string>
     <string name="mark_as_paid">ಪಾವತಿಸಲಾಗಿದೆ</string>
+    <string name="mark_as_notified">ಸೂಚಿಸಲಾಗಿದೆ (Notified)</string>
+    <string name="marked_as_notified">ಗ್ರಾಹಕರಿಗೆ ಸೂಚಿಸಲಾಗಿದೆ ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ</string>
+    <string name="unmarked_as_notified">ಜ್ಞಾಪನೆ ಪುನರಾರಂಭಿಸಲಾಗಿದೆ</string>
+    <string name="notified">ಸೂಚಿಸಲಾಗಿದೆ</string>
     <string name="mark_paid_confirm_title">ಪ್ರೀಮಿಯಂ ಪಾವತಿಸಲಾಗಿದೆ ಎಂದು ಗುರುತಿಸಿ</string>
     <string name="current_due_date">ಪ್ರಸ್ತುತ ಗಡುವು ದಿನಾಂಕ</string>
     <string name="new_next_due_date">ಮುಂದಿನ ಗಡುವು (+1 ವರ್ಷ)</string>

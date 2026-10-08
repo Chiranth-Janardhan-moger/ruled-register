@@ -34,11 +34,13 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.HourglassBottom
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +48,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.core.app.NotificationManagerCompat
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -139,6 +143,10 @@ fun LicDetailScreen(
             account?.let { acc ->
                 val reminderInfo = remember(acc.nextPaymentDate) {
                     PaymentReminderHelper.calculateReminder(acc.nextPaymentDate)
+                }
+
+                var isNotified by remember(acc.policyNumber, acc.nextPaymentDate) {
+                    mutableStateOf(settingsManager.isPolicyNotified(acc.policyNumber, acc.nextPaymentDate))
                 }
 
                 Column(
@@ -272,27 +280,68 @@ fun LicDetailScreen(
 
                             if (reminderInfo.status != PaymentReminderStatus.COMPLETED && acc.nextPaymentDate.isNotBlank()) {
                                 Spacer(modifier = Modifier.height(14.dp))
-                                Button(
-                                    onClick = { showMarkPaidDialog = true },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF2E7D32)
-                                    ),
-                                    shape = RoundedCornerShape(10.dp),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .testTag("mark_paid_detail_button")
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.CheckCircle,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = stringResource(R.string.mark_as_paid),
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp
-                                    )
+                                    Button(
+                                        onClick = { showMarkPaidDialog = true },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF2E7D32)
+                                        ),
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .testTag("mark_paid_detail_button")
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = stringResource(R.string.mark_as_paid),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp
+                                        )
+                                    }
+
+                                    FilledTonalButton(
+                                        onClick = {
+                                            val newNotified = !isNotified
+                                            settingsManager.setPolicyNotified(acc.policyNumber, acc.nextPaymentDate, newNotified)
+                                            isNotified = newNotified
+                                            if (newNotified) {
+                                                try {
+                                                    NotificationManagerCompat.from(context).cancel(acc.id.toInt() + 1000)
+                                                } catch (_: Exception) {}
+                                                Toast.makeText(context, context.getString(R.string.marked_as_notified), Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                Toast.makeText(context, context.getString(R.string.unmarked_as_notified), Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                        colors = ButtonDefaults.filledTonalButtonColors(
+                                            containerColor = if (isNotified) Color(0xFFE0E0E0) else Color(0xFFE3F2FD),
+                                            contentColor = if (isNotified) Color(0xFF616161) else Color(0xFF1565C0)
+                                        ),
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .testTag("mark_notified_button")
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isNotified) Icons.Default.CheckCircle else Icons.Default.NotificationsOff,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = if (isNotified) stringResource(R.string.notified) else stringResource(R.string.mark_as_notified),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -307,100 +356,101 @@ fun LicDetailScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
-                            // Policy Holder Name
-                            Text(
-                                text = stringResource(R.string.name),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = secondaryInk
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = KannadaNameHelper.formatDisplayName(acc.name, currentLang),
-                                style = MaterialTheme.typography.headlineSmall.copy(
-                                    fontFamily = FontFamily.Serif,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 22.sp
-                                ),
-                                color = inkColor
-                            )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            // Policy Number & Policy Name
+                            // Row 1: Name, Policy Number, and Term (e.g. 25/16) in single row
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = stringResource(R.string.policy_number),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = secondaryInk
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = MaterialTheme.colorScheme.surfaceVariant
+                                Text(
+                                    text = KannadaNameHelper.formatDisplayName(acc.name, currentLang),
+                                    style = MaterialTheme.typography.titleLarge.copy(
+                                        fontFamily = FontFamily.Serif,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 18.sp
+                                    ),
+                                    color = inkColor,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(start = 8.dp, end = 2.dp, top = 2.dp, bottom = 2.dp)
                                     ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.padding(start = 10.dp, end = 4.dp, top = 2.dp, bottom = 2.dp)
+                                        Text(
+                                            text = acc.policyNumber,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                fontFamily = FontFamily.Monospace,
+                                                fontSize = 12.sp
+                                            ),
+                                            color = inkColor
+                                        )
+                                        Spacer(modifier = Modifier.width(2.dp))
+                                        IconButton(
+                                            onClick = {
+                                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                                val clip = ClipData.newPlainText("Policy Number", acc.policyNumber)
+                                                clipboard.setPrimaryClip(clip)
+                                                Toast.makeText(context, context.getString(R.string.policy_number_copied), Toast.LENGTH_SHORT).show()
+                                            },
+                                            modifier = Modifier
+                                                .size(24.dp)
+                                                .testTag("copy_policy_number_button")
                                         ) {
-                                            Text(
-                                                text = acc.policyNumber,
-                                                style = MaterialTheme.typography.titleMedium.copy(
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontFamily = FontFamily.Monospace,
-                                                    fontSize = 15.sp
-                                                ),
-                                                color = inkColor
+                                            Icon(
+                                                imageVector = Icons.Default.ContentCopy,
+                                                contentDescription = stringResource(R.string.copy),
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(13.dp)
                                             )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            IconButton(
-                                                onClick = {
-                                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                                    val clip = ClipData.newPlainText("Policy Number", acc.policyNumber)
-                                                    clipboard.setPrimaryClip(clip)
-                                                    Toast.makeText(context, context.getString(R.string.policy_number_copied), Toast.LENGTH_SHORT).show()
-                                                },
-                                                modifier = Modifier
-                                                    .size(32.dp)
-                                                    .testTag("copy_policy_number_button")
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.ContentCopy,
-                                                    contentDescription = stringResource(R.string.copy),
-                                                    tint = MaterialTheme.colorScheme.primary,
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                            }
                                         }
                                     }
                                 }
 
-                                if (acc.policyName.isNotBlank()) {
-                                    Column(modifier = Modifier.weight(1f)) {
+                                if (acc.totalYears.isNotBlank()) {
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                                    ) {
                                         Text(
-                                            text = stringResource(R.string.policy_name),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = secondaryInk
+                                            text = acc.totalYears,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontSize = 12.sp
+                                            ),
+                                            color = secondaryInk,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
                                         )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Surface(
-                                            shape = RoundedCornerShape(8.dp),
-                                            color = MaterialTheme.colorScheme.primaryContainer
-                                        ) {
-                                            Text(
-                                                text = KannadaNameHelper.formatDisplayName(acc.policyName, currentLang),
-                                                style = MaterialTheme.typography.titleMedium.copy(
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    fontSize = 15.sp
-                                                ),
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                            )
-                                        }
                                     }
+                                }
+                            }
+
+                            // Row 2: Policy Name / Plan Name in separate row
+                            if (acc.policyName.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = KannadaNameHelper.formatDisplayName(acc.policyName, currentLang),
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 14.sp
+                                        ),
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                    )
                                 }
                             }
 
@@ -408,28 +458,11 @@ fun LicDetailScreen(
                             HorizontalDivider(color = outlineBorder.copy(alpha = 0.5f))
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Total Year & Premium Amount
+                            // Premium Amount & Sum Assured
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = stringResource(R.string.total_years),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = secondaryInk
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = acc.totalYears.ifBlank { "-" },
-                                        style = MaterialTheme.typography.bodyLarge.copy(
-                                            fontWeight = FontWeight.Medium,
-                                            fontSize = 16.sp
-                                        ),
-                                        color = inkColor
-                                    )
-                                }
-
                                 if (acc.premiumAmount.isNotBlank()) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
@@ -442,6 +475,25 @@ fun LicDetailScreen(
                                             text = acc.premiumAmount,
                                             style = MaterialTheme.typography.bodyLarge.copy(
                                                 fontWeight = FontWeight.Bold,
+                                                fontSize = 16.sp
+                                            ),
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+
+                                if (acc.address.isNotBlank()) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = stringResource(R.string.sum_assured),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = secondaryInk
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = acc.address,
+                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                                fontWeight = FontWeight.SemiBold,
                                                 fontSize = 16.sp
                                             ),
                                             color = MaterialTheme.colorScheme.primary
@@ -575,34 +627,6 @@ fun LicDetailScreen(
                                             color = secondaryInk
                                         )
                                     }
-                                }
-                            }
-
-                            // Sum Assured
-                            if (acc.address.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(16.dp))
-                                HorizontalDivider(color = outlineBorder.copy(alpha = 0.5f))
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Text(
-                                    text = stringResource(R.string.sum_assured),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = secondaryInk
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-                                ) {
-                                    Text(
-                                        text = acc.address,
-                                        style = MaterialTheme.typography.bodyLarge.copy(
-                                            fontWeight = FontWeight.SemiBold,
-                                            fontSize = 16.sp
-                                        ),
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                    )
                                 }
                             }
                         }

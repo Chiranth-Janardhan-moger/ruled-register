@@ -11,8 +11,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.chiranth7.regibook.features.lic.util.PaymentReminderHelper
+import com.chiranth7.regibook.features.lic.util.PaymentReminderStatus
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -123,11 +126,32 @@ class LicViewModel(
                 repository.searchAccounts(query.trim())
             }
         }
+        .map { list -> sortAccountsByUrgency(list) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    private fun getUrgencyRank(status: PaymentReminderStatus): Int = when (status) {
+        PaymentReminderStatus.OVERDUE -> 0    // Red: Overdue comes first
+        PaymentReminderStatus.DUE_TODAY -> 1  // Due today
+        PaymentReminderStatus.DUE_SOON -> 2   // Amber: Due in next few days
+        PaymentReminderStatus.UPCOMING -> 3   // Green: Normal upcoming
+        PaymentReminderStatus.NOT_SET -> 4
+        PaymentReminderStatus.COMPLETED -> 5  // Completed / Matured
+    }
+
+    fun sortAccountsByUrgency(accounts: List<LicAccount>): List<LicAccount> {
+        return accounts.sortedWith(
+            compareBy<LicAccount> { account ->
+                val reminder = PaymentReminderHelper.calculateReminder(account.nextPaymentDate)
+                getUrgencyRank(reminder.status)
+            }.thenBy { account ->
+                PaymentReminderHelper.parseDate(account.nextPaymentDate)?.time ?: Long.MAX_VALUE
+            }
+        )
+    }
 
     private val _selectedAccountId = MutableStateFlow<Long?>(null)
     val selectedAccountId: StateFlow<Long?> = _selectedAccountId.asStateFlow()

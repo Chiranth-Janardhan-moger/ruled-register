@@ -46,8 +46,7 @@ class DailyLicReminderWorker(
         const val NOTIFICATION_GROUP_KEY = "com.chiranth7.regibook.LIC_REMINDERS"
 
         /**
-         * Schedules the daily periodic background check.
-         * Runs approximately once every 24 hours.
+         * Schedules the periodic background check 3 times a day (every 8 hours).
          */
         fun schedule(context: Context) {
             try {
@@ -55,15 +54,15 @@ class DailyLicReminderWorker(
                     .build()
 
                 val workRequest = PeriodicWorkRequestBuilder<DailyLicReminderWorker>(
-                    24, TimeUnit.HOURS,
-                    1, TimeUnit.HOURS // flex interval
+                    8, TimeUnit.HOURS,
+                    15, TimeUnit.MINUTES // flex interval
                 )
                     .setConstraints(constraints)
                     .build()
 
                 WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                     WORK_NAME,
-                    ExistingPeriodicWorkPolicy.KEEP,
+                    ExistingPeriodicWorkPolicy.UPDATE,
                     workRequest
                 )
             } catch (e: Exception) {
@@ -73,6 +72,7 @@ class DailyLicReminderWorker(
 
         /**
          * Checks all policies and posts notifications for those due soon (15, 7, 3, 0 days or overdue).
+         * Suppresses notifications if marked as notified for the current due date.
          * Can be called from the worker or directly from UI/ViewModel on refresh.
          */
         suspend fun checkAndPostReminders(context: Context) {
@@ -80,6 +80,7 @@ class DailyLicReminderWorker(
             val accounts = database.licDao().getAllAccountsList()
             if (accounts.isEmpty()) return
 
+            val settingsManager = com.chiranth7.regibook.util.SettingsManager(context)
             createNotificationChannel(context)
 
             val notificationManager = NotificationManagerCompat.from(context)
@@ -89,6 +90,11 @@ class DailyLicReminderWorker(
 
             for (account in accounts) {
                 if (account.nextPaymentDate.isBlank()) continue
+
+                // Check if policy has already been marked as notified for this payment cycle
+                if (settingsManager.isPolicyNotified(account.policyNumber, account.nextPaymentDate)) {
+                    continue
+                }
 
                 val reminder = PaymentReminderHelper.calculateReminder(account.nextPaymentDate)
                 val diff = reminder.daysDifference
@@ -145,6 +151,22 @@ class DailyLicReminderWorker(
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
+            val notificationId = account.id.toInt() + 1000
+
+            val markNotifiedIntent = Intent(context, com.chiranth7.regibook.features.lic.receiver.MarkNotifiedReceiver::class.java).apply {
+                action = com.chiranth7.regibook.features.lic.receiver.MarkNotifiedReceiver.ACTION_MARK_NOTIFIED
+                putExtra(com.chiranth7.regibook.features.lic.receiver.MarkNotifiedReceiver.EXTRA_POLICY_NUMBER, account.policyNumber)
+                putExtra(com.chiranth7.regibook.features.lic.receiver.MarkNotifiedReceiver.EXTRA_DUE_DATE, account.nextPaymentDate)
+                putExtra(com.chiranth7.regibook.features.lic.receiver.MarkNotifiedReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+            }
+
+            val markNotifiedPendingIntent = PendingIntent.getBroadcast(
+                context,
+                account.id.toInt() + 5000,
+                markNotifiedIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
             val title = when (status) {
                 PaymentReminderStatus.DUE_TODAY -> "LIC Premium Due Today: ${account.name}"
                 PaymentReminderStatus.OVERDUE -> "LIC Premium Overdue: ${account.name}"
@@ -172,11 +194,16 @@ class DailyLicReminderWorker(
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
+                .addAction(
+                    R.drawable.ic_launcher_foreground,
+                    context.getString(R.string.mark_as_notified),
+                    markNotifiedPendingIntent
+                )
                 .setGroup(NOTIFICATION_GROUP_KEY)
                 .build()
 
             try {
-                NotificationManagerCompat.from(context).notify(account.id.toInt() + 1000, notification)
+                NotificationManagerCompat.from(context).notify(notificationId, notification)
             } catch (_: SecurityException) {
                 // In case POST_NOTIFICATIONS was revoked
             }
