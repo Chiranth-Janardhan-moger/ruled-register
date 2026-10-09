@@ -491,6 +491,22 @@ class ExampleRobolectricTest {
     assertTrue(adv2.isMatured)
     assertEquals("Completed", adv2.newNextPaymentDate)
   }
+
+  @Test
+  fun `test pigmi 4-digit serial numbers support`() {
+    val account = com.chiranth7.regibook.features.pigmi.data.PigmiAccount(
+      id = 1000L,
+      srNo = 1100,
+      name = "Chiranth",
+      phoneNumber = "+91 9800000000",
+      address = "Bengaluru",
+      accountNumber = "PG-1100",
+      dailyAmount = "₹200"
+    )
+    assertEquals("1100", account.srNo.toString())
+    assertEquals(4, account.srNo.toString().length)
+  }
 }
+
 
 

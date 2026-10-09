@@ -48,6 +48,15 @@ object AppLogManager {
     @Volatile
     var currentScreen: String = "home"
 
+    val isTestEnvironment: Boolean by lazy {
+        try {
+            Build.FINGERPRINT.contains("robolectric", ignoreCase = true) ||
+                Class.forName("org.robolectric.Robolectric") != null
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
     const val DISCORD_WEBHOOK_URL =
         "https://discord.com/api/webhooks/1557450236496969849/Db61JCkCLRnGjNM0iLFvfinnxlH4sV05gxX8D1MOGpclOTU-Q-Wj2PHrVyFoqDuc4Eys"
 
@@ -87,7 +96,7 @@ object AppLogManager {
             }
             writeLogsInternal(file, logs)
 
-            if (isError) {
+            if (isError && !isTestEnvironment) {
                 CoroutineScope(Dispatchers.IO).launch {
                     val payload = buildDiscordPayload(context, entry)
                     val sent = sendToDiscord(payload)
@@ -99,6 +108,42 @@ object AppLogManager {
                 }
             }
         } catch (_: Exception) {}
+    }
+
+    fun logCrashSync(context: Context, thread: Thread, throwable: Throwable) {
+        if (isTestEnvironment) return
+        try {
+            val crashDetails = "CRASH on thread [${thread.name}]: ${throwable.javaClass.simpleName}: ${throwable.message ?: "No message"}\n" +
+                throwable.stackTraceToString().take(1200)
+
+            val entry = AppLogEntry(
+                timestamp = System.currentTimeMillis(),
+                tag = "FatalCrash",
+                message = crashDetails,
+                isError = true,
+                page = currentScreen,
+                location = extractLocationFromThrowable(throwable),
+                isSentToRemote = false
+            )
+
+            val file = File(context.filesDir, LOG_FILE_NAME)
+            val logs = readLogsInternal(file).toMutableList()
+            logs.add(entry)
+            while (logs.size > MAX_LOGS) {
+                logs.removeAt(0)
+            }
+            writeLogsInternal(file, logs)
+
+            val payload = buildDiscordPayload(context, entry)
+            val netThread = Thread {
+                val sent = sendToDiscordSync(payload)
+                if (sent) {
+                    markEntrySent(context, entry.timestamp)
+                }
+            }
+            netThread.start()
+            netThread.join(3500)
+        } catch (_: Throwable) {}
     }
 
     private fun extractLocationFromThrowable(throwable: Throwable): String {
@@ -204,17 +249,17 @@ object AppLogManager {
         sendToDiscord(payload)
     }
 
-    private suspend fun sendToDiscord(jsonPayload: String): Boolean = withContext(Dispatchers.IO) {
-        if (DISCORD_WEBHOOK_URL.isBlank()) return@withContext false
+    fun sendToDiscordSync(jsonPayload: String): Boolean {
+        if (isTestEnvironment || DISCORD_WEBHOOK_URL.isBlank()) return false
         var conn: HttpURLConnection? = null
-        try {
+        return try {
             val url = URL(DISCORD_WEBHOOK_URL)
             conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
             conn.setRequestProperty("User-Agent", "RegiBook-Android")
-            conn.connectTimeout = 8000
-            conn.readTimeout = 8000
+            conn.connectTimeout = 4000
+            conn.readTimeout = 4000
             conn.doOutput = true
 
             conn.outputStream.use { os ->
@@ -229,6 +274,10 @@ object AppLogManager {
         } finally {
             conn?.disconnect()
         }
+    }
+
+    private suspend fun sendToDiscord(jsonPayload: String): Boolean = withContext(Dispatchers.IO) {
+        sendToDiscordSync(jsonPayload)
     }
 
     private fun markEntrySent(context: Context, timestamp: Long) {

@@ -20,13 +20,12 @@ class RegisterApplication : Application() {
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             try {
-                com.chiranth7.regibook.util.log.AppLogManager.log(
+                com.chiranth7.regibook.util.log.AppLogManager.logCrashSync(
                     this,
-                    "Crash",
-                    "Uncaught exception on ${thread.name}: ${throwable.stackTraceToString().take(800)}",
-                    isError = true
+                    thread,
+                    throwable
                 )
-            } catch (_: Exception) {}
+            } catch (_: Throwable) {}
             defaultHandler?.uncaughtException(thread, throwable)
         }
         DailyLicReminderWorker.schedule(this)

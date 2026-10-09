@@ -51,6 +51,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -58,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -128,6 +130,18 @@ fun PigmiRegisterScreen(
             )
         }
     ) {
+        val fontScale = LocalDensity.current.fontScale
+        val maxSrNo = remember(accounts) {
+            accounts.maxOfOrNull { it.srNo } ?: 1
+        }
+        val maxDigits = maxSrNo.toString().length
+        val baseMarginWidth = when {
+            maxDigits >= 5 -> 78.dp
+            maxDigits >= 4 -> 66.dp
+            else -> 56.dp
+        }
+        val marginWidth = baseMarginWidth * fontScale.coerceIn(1f, 1.45f)
+
         Box(
             modifier = modifier
                 .fillMaxSize()
@@ -135,7 +149,7 @@ fun PigmiRegisterScreen(
         ) {
             NotebookPaperBackground(
                 lineSpacing = NotebookRowHeight,
-                marginLineOffset = NotebookMarginLeft,
+                marginLineOffset = marginWidth,
                 topStartOffset = 56.dp,
                 showMarginLine = true,
                 showRuledLines = false
@@ -314,7 +328,7 @@ fun PigmiRegisterScreen(
                                 ),
                                 color = secondaryInk,
                                 modifier = Modifier
-                                    .padding(start = NotebookMarginLeft + 12.dp, end = 16.dp)
+                                    .padding(start = marginWidth + 12.dp, end = 16.dp)
                                     .testTag("empty_register_text")
                             )
                         }
@@ -330,7 +344,11 @@ fun PigmiRegisterScreen(
                                 items = accounts,
                                 key = { it.id }
                             ) { account ->
-                                PigmiRow(account = account, currentLanguage = currentLang)
+                                PigmiRow(
+                                    account = account,
+                                    currentLanguage = currentLang,
+                                    marginWidth = marginWidth
+                                )
                             }
                         }
 
@@ -369,11 +387,20 @@ fun PigmiRegisterScreen(
 private fun PigmiRow(
     account: PigmiAccount,
     currentLanguage: String = SettingsManager.LANG_ENGLISH,
+    marginWidth: Dp = NotebookMarginLeft,
     modifier: Modifier = Modifier
 ) {
     val inkColor = MaterialTheme.colorScheme.onBackground
     val secondaryInk = MaterialTheme.colorScheme.onSurfaceVariant
     val rulingColor = MaterialTheme.colorScheme.outline
+    val fontScale = LocalDensity.current.fontScale
+
+    val digitCount = account.srNo.toString().length
+    val srNoFontSize = when {
+        digitCount >= 5 -> if (fontScale > 1.2f) 12.sp else 13.sp
+        digitCount >= 4 -> if (fontScale > 1.2f) 13.5.sp else 14.5.sp
+        else -> 15.sp
+    }
 
     Box(
         modifier = modifier
@@ -390,7 +417,7 @@ private fun PigmiRow(
             // Margin column: Serial Number
             Box(
                 modifier = Modifier
-                    .width(NotebookMarginLeft)
+                    .width(marginWidth)
                     .padding(end = 8.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
@@ -399,11 +426,12 @@ private fun PigmiRow(
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontFamily = FontFamily.Serif,
                         fontWeight = FontWeight.Medium,
-                        fontSize = 15.sp
+                        fontSize = srNoFontSize
                     ),
                     color = secondaryInk,
                     textAlign = TextAlign.End,
-                    maxLines = 1
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
 

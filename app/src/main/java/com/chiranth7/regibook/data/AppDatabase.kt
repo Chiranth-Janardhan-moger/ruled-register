@@ -17,7 +17,7 @@ import com.chiranth7.regibook.features.pigmi.data.PigmiDao
         PigmiAccount::class,
         LicAccount::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -36,48 +36,94 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                rebuildPigmiAccountsTable(db)
+            }
+        }
+
+        val MIGRATION_8_10 = object : Migration(8, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE lic_accounts ADD COLUMN commencementDate TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE lic_accounts ADD COLUMN lastPremiumDate TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE lic_accounts ADD COLUMN maturityDate TEXT NOT NULL DEFAULT ''")
+                rebuildPigmiAccountsTable(db)
+            }
+        }
+
+        private fun rebuildPigmiAccountsTable(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `pigmi_accounts_temp` (" +
+                    "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`srNo` INTEGER NOT NULL, " +
+                    "`name` TEXT NOT NULL, " +
+                    "`phoneNumber` TEXT NOT NULL, " +
+                    "`address` TEXT NOT NULL, " +
+                    "`accountNumber` TEXT NOT NULL, " +
+                    "`dailyAmount` TEXT NOT NULL" +
+                ")"
+            )
+
+            try {
+                db.execSQL(
+                    "INSERT INTO `pigmi_accounts_temp` (`id`, `srNo`, `name`, `phoneNumber`, `address`, `accountNumber`, `dailyAmount`) " +
+                    "SELECT `id`, `srNo`, `name`, " +
+                    "COALESCE(`phoneNumber`, ''), " +
+                    "COALESCE(`address`, ''), " +
+                    "COALESCE(`accountNumber`, ''), " +
+                    "COALESCE(`dailyAmount`, '') " +
+                    "FROM `pigmi_accounts`"
+                )
+            } catch (e: Exception) {
+                Log.w("AppDatabase", "Fallback copy for pigmi_accounts migration", e)
+                try {
+                    db.execSQL(
+                        "INSERT INTO `pigmi_accounts_temp` (`id`, `srNo`, `name`, `phoneNumber`, `address`, `accountNumber`, `dailyAmount`) " +
+                        "SELECT `id`, `srNo`, `name`, '', '', '', '' FROM `pigmi_accounts`"
+                    )
+                } catch (_: Exception) {}
+            }
+
+            db.execSQL("DROP TABLE IF EXISTS `pigmi_accounts`")
+            db.execSQL("ALTER TABLE `pigmi_accounts_temp` RENAME TO `pigmi_accounts`")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_pigmi_accounts_srNo` ON `pigmi_accounts` (`srNo`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_pigmi_accounts_name` ON `pigmi_accounts` (`name`)")
+        }
+
+        private fun buildDatabase(context: Context): AppDatabase {
+            return Room.databaseBuilder(
+                context.applicationContext,
+                AppDatabase::class.java,
+                "register_book_database"
+            )
+                .addMigrations(MIGRATION_8_9, MIGRATION_9_10, MIGRATION_8_10)
+                .fallbackToDestructiveMigration(true)
+                .fallbackToDestructiveMigrationOnDowngrade(true)
+                .build()
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "register_book_database"
-                )
-                    .addMigrations(MIGRATION_8_9)
-                    .fallbackToDestructiveMigration(true)
-                    .addCallback(object : RoomDatabase.Callback() {
-                        override fun onCreate(db: SupportSQLiteDatabase) {
-                            super.onCreate(db)
-                            try {
-                                db.beginTransaction()
-                                try {
-                                    // Pre-populate sample records for LIC cards
-                                    val licStmt = db.compileStatement(
-                                        "INSERT INTO lic_accounts (name, policyNumber, policyName, totalYears, lastPaymentDate, nextPaymentDate, phoneNumber, address, premiumAmount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                                    )
-                                    val sampleLics = listOf(
-                                        listOf("Chiranth Janardhan Moger", "739558210", "736 - LIC'S JEEVAN LABH PLAN", "21/15", "29/06/2025", "28/06/2026", "", "₹2,00,000", "₹11,873/Year")
-                                    )
-                                    for (lic in sampleLics) {
-                                        for (idx in 1..9) {
-                                            licStmt.bindString(idx, lic[idx - 1])
-                                        }
-                                        licStmt.executeInsert()
-                                        licStmt.clearBindings()
-                                    }
+                INSTANCE ?: buildAndValidateDatabase(context).also { INSTANCE = it }
+            }
+        }
 
-                                    db.setTransactionSuccessful()
-                                } finally {
-                                    db.endTransaction()
-                                }
-                            } catch (e: Exception) {
-                                Log.e("AppDatabase", "Error populating initial data", e)
-                            }
-                        }
-                    })
-                    .build()
-                INSTANCE = instance
-                instance
+        private fun buildAndValidateDatabase(context: Context): AppDatabase {
+            val db = buildDatabase(context)
+            return try {
+                db.openHelper.writableDatabase
+                db
+            } catch (e: Exception) {
+                Log.e("AppDatabase", "Database open/migration failed. Recreating clean database.", e)
+                try {
+                    db.close()
+                } catch (_: Exception) {}
+                try {
+                    context.deleteDatabase("register_book_database")
+                } catch (_: Exception) {}
+                val freshDb = buildDatabase(context)
+                freshDb.openHelper.writableDatabase
+                freshDb
             }
         }
     }
