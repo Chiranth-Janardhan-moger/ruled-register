@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.chiranth7.regibook.features.lic.data.LicAccount
 import com.chiranth7.regibook.features.lic.data.LicDao
@@ -16,7 +17,7 @@ import com.chiranth7.regibook.features.pigmi.data.PigmiDao
         PigmiAccount::class,
         LicAccount::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -27,6 +28,14 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE lic_accounts ADD COLUMN commencementDate TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE lic_accounts ADD COLUMN lastPremiumDate TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE lic_accounts ADD COLUMN maturityDate TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -34,6 +43,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "register_book_database"
                 )
+                    .addMigrations(MIGRATION_8_9)
                     .fallbackToDestructiveMigration(true)
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
@@ -41,36 +51,6 @@ abstract class AppDatabase : RoomDatabase() {
                             try {
                                 db.beginTransaction()
                                 try {
-                                    val stmt = db.compileStatement(
-                                        "INSERT INTO pigmi_accounts (srNo, name, phoneNumber, address, accountNumber, dailyAmount) VALUES (?, ?, ?, ?, ?, ?)"
-                                    )
-                                    val names = listOf(
-                                        "Rahul", "Anil", "Ramesh", "Pooja", "Suresh",
-                                        "Kiran", "Vijay", "Deepa", "Manjunath", "Ganesh",
-                                        "Lakshmi", "Venkatesh", "Sunita", "Prashanth", "Geetha"
-                                    )
-                                    val localities = listOf(
-                                        "MG Road", "Jayanagar", "Malleswaram", "Indiranagar",
-                                        "Rajajinagar", "Basavanagudi", "BTM Layout", "Hebbal",
-                                        "Koramangala", "Whitefield"
-                                    )
-                                    for (i in 1..1100) {
-                                        val name = "${names[i % names.size]} ${('A' + (i % 26))}"
-                                        val phone = "+91 98${"%08d".format(10000000 + i)}"
-                                        val addr = "${localities[i % localities.size]}, Bengaluru"
-                                        val accNo = "PG-${1000 + i}"
-                                        val amt = "₹${100 + (i % 10) * 50}"
-
-                                        stmt.bindLong(1, i.toLong())
-                                        stmt.bindString(2, name)
-                                        stmt.bindString(3, phone)
-                                        stmt.bindString(4, addr)
-                                        stmt.bindString(5, accNo)
-                                        stmt.bindString(6, amt)
-                                        stmt.executeInsert()
-                                        stmt.clearBindings()
-                                    }
-
                                     // Pre-populate sample records for LIC cards
                                     val licStmt = db.compileStatement(
                                         "INSERT INTO lic_accounts (name, policyNumber, policyName, totalYears, lastPaymentDate, nextPaymentDate, phoneNumber, address, premiumAmount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"

@@ -23,5 +23,8 @@ data class LicAccount(
     val lastPaymentDate: String = "",
     val nextPaymentDate: String = "",
     val premiumAmount: String = "",
-    val address: String = ""
+    val address: String = "",
+    val commencementDate: String = "",
+    val lastPremiumDate: String = "",
+    val maturityDate: String = ""
 )

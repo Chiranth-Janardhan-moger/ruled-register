@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.NotificationsOff
@@ -623,6 +624,148 @@ fun LicDetailScreen(
                                             style = MaterialTheme.typography.bodyLarge.copy(
                                                 fontWeight = FontWeight.Medium,
                                                 fontSize = 15.sp
+                                            ),
+                                            color = secondaryInk
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Policy Schedule Section: Remaining Count, Last Premium Date & Maturity Date
+                            val scheduleInfo = remember(acc.totalYears, acc.nextPaymentDate, acc.lastPaymentDate, acc.commencementDate, acc.lastPremiumDate, acc.maturityDate) {
+                                PaymentReminderHelper.calculatePolicySchedule(
+                                    totalYears = acc.totalYears,
+                                    nextPaymentDate = acc.nextPaymentDate,
+                                    lastPaymentDate = acc.lastPaymentDate,
+                                    storedCommencement = acc.commencementDate,
+                                    storedLastPremium = acc.lastPremiumDate,
+                                    storedMaturity = acc.maturityDate
+                                )
+                            }
+
+                            if (scheduleInfo != null && (scheduleInfo.endOfPremiumTermDate.isNotBlank() || scheduleInfo.maturityDate.isNotBlank() || scheduleInfo.remainingPaymentsCount > 0)) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                HorizontalDivider(color = outlineBorder.copy(alpha = 0.5f))
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Text(
+                                    text = stringResource(R.string.policy_schedule_title).uppercase(),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 0.8.sp
+                                    ),
+                                    color = secondaryInk
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                // Remaining Years Badge / Highlight Card
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = when {
+                                        scheduleInfo.isFullyPaid -> Color(0xFFE8F5E9)
+                                        scheduleInfo.remainingPaymentsCount == 1 -> Color(0xFFFFF3E0)
+                                        else -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = when {
+                                                scheduleInfo.isFullyPaid -> Icons.Default.CheckCircle
+                                                scheduleInfo.remainingPaymentsCount == 1 -> Icons.Default.Warning
+                                                else -> Icons.Default.DateRange
+                                            },
+                                            contentDescription = null,
+                                            tint = when {
+                                                scheduleInfo.isFullyPaid -> Color(0xFF2E7D32)
+                                                scheduleInfo.remainingPaymentsCount == 1 -> Color(0xFFE65100)
+                                                else -> MaterialTheme.colorScheme.primary
+                                            },
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = when {
+                                                scheduleInfo.isFullyPaid -> stringResource(R.string.all_premiums_paid)
+                                                scheduleInfo.remainingPaymentsCount == 1 -> stringResource(R.string.final_premium_due)
+                                                else -> stringResource(R.string.years_remaining_to_pay, scheduleInfo.remainingPaymentsCount, scheduleInfo.remainingPaymentsCount)
+                                            },
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 14.sp
+                                            ),
+                                            color = when {
+                                                scheduleInfo.isFullyPaid -> Color(0xFF2E7D32)
+                                                scheduleInfo.remainingPaymentsCount == 1 -> Color(0xFFE65100)
+                                                else -> MaterialTheme.colorScheme.primary
+                                            }
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                // Last Premium Date & Maturity Date Row
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    if (scheduleInfo.endOfPremiumTermDate.isNotBlank()) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = stringResource(R.string.end_of_premium_term),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = secondaryInk
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = scheduleInfo.endOfPremiumTermDate,
+                                                style = MaterialTheme.typography.bodyLarge.copy(
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    fontSize = 15.sp
+                                                ),
+                                                color = inkColor
+                                            )
+                                        }
+                                    }
+
+                                    if (scheduleInfo.maturityDate.isNotBlank()) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = stringResource(R.string.maturity_date),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = secondaryInk
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = scheduleInfo.maturityDate,
+                                                style = MaterialTheme.typography.bodyLarge.copy(
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    fontSize = 15.sp
+                                                ),
+                                                color = Color(0xFF2E7D32)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                if (scheduleInfo.commencementDate.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = stringResource(R.string.commencement_date) + ": ",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = secondaryInk
+                                        )
+                                        Text(
+                                            text = scheduleInfo.commencementDate,
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                fontWeight = FontWeight.Medium,
+                                                fontSize = 13.sp
                                             ),
                                             color = secondaryInk
                                         )

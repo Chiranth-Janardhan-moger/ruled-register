@@ -223,7 +223,7 @@ class ExampleRobolectricTest {
   fun `test all Kannada string resources can be loaded and formatted`() {
     val context = ApplicationProvider.getApplicationContext<Context>()
     val config = Configuration(context.resources.configuration).apply {
-      setLocale(Locale("kn"))
+      setLocale(Locale.forLanguageTag("kn"))
     }
     val knContext = context.createConfigurationContext(config)
 
@@ -401,7 +401,7 @@ class ExampleRobolectricTest {
 
     // Kannada config
     val config = Configuration(context.resources.configuration).apply {
-      setLocale(Locale("kn"))
+      setLocale(Locale.forLanguageTag("kn"))
     }
     val knContext = context.createConfigurationContext(config)
 
@@ -413,6 +413,83 @@ class ExampleRobolectricTest {
 
     val notifiedKn = knContext.getString(R.string.notified)
     assertFalse(notifiedKn.isBlank())
+
+    val endOfPptKn = knContext.getString(R.string.end_of_premium_term)
+    assertFalse(endOfPptKn.isBlank())
+
+    val maturityKn = knContext.getString(R.string.maturity_date)
+    assertFalse(maturityKn.isBlank())
+
+    val remainingKn = knContext.getString(R.string.years_remaining_to_pay, 14, 14)
+    assertTrue(remainingKn.contains("14"))
+  }
+
+  @Test
+  fun `test parseTermAndPpt parses fraction and single numbers correctly`() {
+    val (term1, ppt1) = PaymentReminderHelper.parseTermAndPpt("21/15")
+    assertEquals(21, term1)
+    assertEquals(15, ppt1)
+
+    val (term2, ppt2) = PaymentReminderHelper.parseTermAndPpt("25/16")
+    assertEquals(25, term2)
+    assertEquals(16, ppt2)
+
+    val (term3, ppt3) = PaymentReminderHelper.parseTermAndPpt("16/16")
+    assertEquals(16, term3)
+    assertEquals(16, ppt3)
+
+    val (term4, ppt4) = PaymentReminderHelper.parseTermAndPpt("15 Years")
+    assertEquals(15, term4)
+    assertEquals(15, ppt4)
+
+    val (term5, ppt5) = PaymentReminderHelper.parseTermAndPpt("")
+    assertEquals(0, term5)
+    assertEquals(0, ppt5)
+  }
+
+  @Test
+  fun `test calculatePolicySchedule calculates correct dates and remaining count`() {
+    val schedule = PaymentReminderHelper.calculatePolicySchedule(
+      totalYears = "21/15",
+      nextPaymentDate = "28/06/2026",
+      lastPaymentDate = "29/06/2025",
+      storedCommencement = "28/06/2025",
+      storedLastPremium = "28/06/2040",
+      storedMaturity = "28/06/2046"
+    )
+
+    assertNotNull(schedule)
+    assertEquals(21, schedule!!.termYears)
+    assertEquals(15, schedule.pptYears)
+    assertEquals("28/06/2025", schedule.commencementDate)
+    assertEquals("28/06/2040", schedule.endOfPremiumTermDate)
+    assertEquals("28/06/2046", schedule.maturityDate)
+    // 15 total payments. 2025 paid (1). 2026 due. Remaining: 2039 - 2026 + 1 = 14
+    assertEquals(14, schedule.remainingPaymentsCount)
+    assertFalse(schedule.isFullyPaid)
+  }
+
+  @Test
+  fun `test payment advance stops at PPT limit and transitions to completed`() {
+    // Starting at 2038 with 21/15 (commencement 2025, final payment 2039)
+    val adv1 = PaymentReminderHelper.calculateNextPaymentAdvance(
+      currentNextDate = "28/06/2038",
+      totalYears = "21/15",
+      forceMatured = false,
+      storedCommencementDate = "28/06/2025"
+    )
+    assertFalse(adv1.isMatured)
+    assertEquals("28/06/2039", adv1.newNextPaymentDate)
+
+    // Paying the 15th and final premium (2039)
+    val adv2 = PaymentReminderHelper.calculateNextPaymentAdvance(
+      currentNextDate = "28/06/2039",
+      totalYears = "21/15",
+      forceMatured = false,
+      storedCommencementDate = "28/06/2025"
+    )
+    assertTrue(adv2.isMatured)
+    assertEquals("Completed", adv2.newNextPaymentDate)
   }
 }
 

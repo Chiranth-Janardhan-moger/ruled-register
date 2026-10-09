@@ -70,7 +70,10 @@ object LicSyncManager {
                         lastPaymentDate = incoming.lastPaymentDate.ifBlank { existing.lastPaymentDate },
                         nextPaymentDate = incoming.nextPaymentDate.ifBlank { existing.nextPaymentDate },
                         premiumAmount = incoming.premiumAmount.ifBlank { existing.premiumAmount },
-                        address = incoming.address.ifBlank { existing.address }
+                        address = incoming.address.ifBlank { existing.address },
+                        commencementDate = incoming.commencementDate.ifBlank { existing.commencementDate },
+                        lastPremiumDate = incoming.lastPremiumDate.ifBlank { existing.lastPremiumDate },
+                        maturityDate = incoming.maturityDate.ifBlank { existing.maturityDate }
                     )
                     licDao.updateAccount(updated)
                 } else {
@@ -181,6 +184,9 @@ object LicSyncManager {
             val nextPaymentDate = item.optString("nextPaymentDate", item.optString("next_payment_date", item.optString("next_due_date", item.optString("fup", "")))).trim()
             val premiumAmount = item.optString("premiumAmount", item.optString("premium_amount", item.optString("premium", ""))).trim()
             val sumAssured = item.optString("sumAssured", item.optString("sum_assured", item.optString("address", ""))).trim()
+            val commencementDate = item.optString("commencementDate", item.optString("commencement_date", "")).trim()
+            val lastPremiumDate = item.optString("lastPremiumDate", item.optString("last_premium_date", item.optString("endOfPpt", item.optString("end_of_ppt", "")))).trim()
+            val maturityDate = item.optString("maturityDate", item.optString("maturity_date", "")).trim()
 
             list.add(
                 LicAccount(
@@ -193,7 +199,10 @@ object LicSyncManager {
                     lastPaymentDate = lastPaymentDate,
                     nextPaymentDate = nextPaymentDate,
                     premiumAmount = premiumAmount,
-                    address = sumAssured
+                    address = sumAssured,
+                    commencementDate = commencementDate,
+                    lastPremiumDate = lastPremiumDate,
+                    maturityDate = maturityDate
                 )
             )
         }

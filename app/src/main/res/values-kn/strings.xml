@@ -115,4 +115,11 @@
     <string name="log_copied">ದೋಷ ಲಾಗ್‌ಗಳನ್ನು ನಕಲಿಸಲಾಗಿದೆ</string>
     <string name="close">ಮುಚ್ಚಿ</string>
     <string name="logs">ಲಾಗ್‌ಗಳು</string>
+    <string name="end_of_premium_term">ಕೊನೆಯ ಕಂತಿನ ದಿನಾಂಕ</string>
+    <string name="maturity_date">ಮೆಚ್ಯೂರಿಟಿ ದಿನಾಂಕ</string>
+    <string name="commencement_date">ಆರಂಭದ ದಿನಾಂಕ</string>
+    <string name="policy_schedule_title">ಕಾಲಾವಧಿ ಮತ್ತು ಕಂತುಗಳ ವಿವರ</string>
+    <string name="years_remaining_to_pay">ಇನ್ನೂ %1$d ವರ್ಷ ಪಾವತಿಸಬೇಕು (%2$d ಕಂತುಗಳು ಬಾಕಿ)</string>
+    <string name="final_premium_due">ಕೊನೆಯ ಕಂತು ಪಾವತಿ ಬಾಕಿ</string>
+    <string name="all_premiums_paid">ಎಲ್ಲಾ ಕಂತುಗಳು ಪಾವತಿಯಾಗಿವೆ</string>
 </resources>

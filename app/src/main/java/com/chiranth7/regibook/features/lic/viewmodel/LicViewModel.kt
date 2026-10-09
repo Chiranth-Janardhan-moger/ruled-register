@@ -95,7 +95,7 @@ class LicViewModel(
                 }
             }
 
-            // Ensure Chiranth Janardhan Moger policy exists with Sum Assured
+            // Ensure Chiranth Janardhan Moger policy exists with Sum Assured and key dates
             val existing = repository.getAccountByPolicyNumber("739558210")
             if (existing == null) {
                 repository.insert(
@@ -108,11 +108,21 @@ class LicViewModel(
                         nextPaymentDate = "28/06/2026",
                         premiumAmount = "₹11,873/Year",
                         address = "₹2,00,000",
-                        phoneNumber = ""
+                        phoneNumber = "",
+                        commencementDate = "28/06/2025",
+                        lastPremiumDate = "28/06/2040",
+                        maturityDate = "28/06/2046"
                     )
                 )
-            } else if (existing.address != "₹2,00,000") {
-                repository.update(existing.copy(address = "₹2,00,000"))
+            } else if (existing.commencementDate.isBlank() || existing.lastPremiumDate.isBlank() || existing.maturityDate.isBlank() || existing.address != "₹2,00,000") {
+                repository.update(
+                    existing.copy(
+                        address = "₹2,00,000",
+                        commencementDate = "28/06/2025",
+                        lastPremiumDate = "28/06/2040",
+                        maturityDate = "28/06/2046"
+                    )
+                )
             }
         }
     }

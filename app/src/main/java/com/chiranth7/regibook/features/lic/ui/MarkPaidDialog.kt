@@ -36,7 +36,10 @@ fun MarkPaidDialog(
         PaymentReminderHelper.calculateNextPaymentAdvance(
             currentNextDate = account.nextPaymentDate,
             totalYears = account.totalYears,
-            forceMatured = isFinalPayment
+            forceMatured = isFinalPayment,
+            lastPaymentDate = account.lastPaymentDate,
+            storedLastPremiumDate = account.lastPremiumDate,
+            storedCommencementDate = account.commencementDate
         )
     }
 
@@ -180,6 +183,35 @@ fun MarkPaidDialog(
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                val scheduleAfter = remember(account, advanceResult) {
+                    PaymentReminderHelper.calculatePolicySchedule(
+                        totalYears = account.totalYears,
+                        nextPaymentDate = advanceResult.newNextPaymentDate,
+                        lastPaymentDate = advanceResult.newLastPaymentDate,
+                        storedCommencement = account.commencementDate,
+                        storedLastPremium = account.lastPremiumDate,
+                        storedMaturity = account.maturityDate
+                    )
+                }
+
+                if (scheduleAfter != null) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = if (scheduleAfter.isFullyPaid || advanceResult.isMatured) {
+                            stringResource(R.string.all_premiums_paid)
+                        } else if (scheduleAfter.remainingPaymentsCount == 1) {
+                            stringResource(R.string.final_premium_due)
+                        } else {
+                            stringResource(R.string.years_remaining_to_pay, scheduleAfter.remainingPaymentsCount, scheduleAfter.remainingPaymentsCount)
+                        },
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.sp
+                        ),
+                        color = if (advanceResult.isMatured) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 

@@ -101,7 +101,7 @@ class SettingsManager(context: Context) {
         setFontScale(_fontScale.value - FONT_SCALE_STEP)
     }
 
-    fun getLocale(): Locale = Locale(_currentLanguage.value)
+    fun getLocale(): Locale = Locale.forLanguageTag(_currentLanguage.value)
 
     // Policy Notified Status (Silences reminders for current due cycle)
     fun getNotifiedPolicyKey(policyNumber: String, dueDate: String): String =

@@ -8,6 +8,9 @@
     "lastPaymentDate": "29/06/2025",
     "nextPaymentDate": "28/06/2026",
     "premiumAmount": "₹11,873/Year",
-    "sumAssured": "₹2,00,000"
+    "sumAssured": "₹2,00,000",
+    "commencementDate": "28/06/2025",
+    "lastPremiumDate": "28/06/2040",
+    "maturityDate": "28/06/2046"
   }
 ]

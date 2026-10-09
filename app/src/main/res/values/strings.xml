@@ -114,4 +114,11 @@
     <string name="log_copied">Log copied to clipboard</string>
     <string name="close">Close</string>
     <string name="logs">Logs</string>
+    <string name="end_of_premium_term">Last Premium Date</string>
+    <string name="maturity_date">Maturity Date</string>
+    <string name="commencement_date">Commencement Date</string>
+    <string name="policy_schedule_title">Policy Term &amp; Schedule</string>
+    <string name="years_remaining_to_pay">%1$d Years to Pay (%2$d Premiums Left)</string>
+    <string name="final_premium_due">Final Premium Due (1 Payment Left)</string>
+    <string name="all_premiums_paid">All Premiums Paid (Completed)</string>
 </resources>
