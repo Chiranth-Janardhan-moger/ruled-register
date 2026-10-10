@@ -111,16 +111,18 @@ class LicViewModel(
                         phoneNumber = "",
                         commencementDate = "28/06/2025",
                         lastPremiumDate = "28/06/2040",
-                        maturityDate = "28/06/2046"
+                        maturityDate = "28/06/2046",
+                        kannadaName = "ಚಿರಂತ ಜನಾರ್ದನ ಮೊಗೇರ"
                     )
                 )
-            } else if (existing.commencementDate.isBlank() || existing.lastPremiumDate.isBlank() || existing.maturityDate.isBlank() || existing.address != "₹2,00,000") {
+            } else if (existing.commencementDate.isBlank() || existing.lastPremiumDate.isBlank() || existing.maturityDate.isBlank() || existing.address != "₹2,00,000" || existing.kannadaName.isBlank()) {
                 repository.update(
                     existing.copy(
                         address = "₹2,00,000",
                         commencementDate = "28/06/2025",
                         lastPremiumDate = "28/06/2040",
-                        maturityDate = "28/06/2046"
+                        maturityDate = "28/06/2046",
+                        kannadaName = "ಚಿರಂತ ಜನಾರ್ದನ ಮೊಗೇರ"
                     )
                 )
             }

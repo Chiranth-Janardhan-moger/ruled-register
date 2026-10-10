@@ -363,7 +363,7 @@ fun LicDetailScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = KannadaNameHelper.formatDisplayName(acc.name, currentLang),
+                                    text = acc.getDisplayName(currentLang),
                                     style = MaterialTheme.typography.titleLarge.copy(
                                         fontFamily = FontFamily.Serif,
                                         fontWeight = FontWeight.Bold,

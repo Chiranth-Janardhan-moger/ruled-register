@@ -390,39 +390,12 @@ fun AddEditLicScreen(
                     placeholder = { Text(stringResource(R.string.enter_premium_amount)) },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Next
+                        imeAction = ImeAction.Done
                     ),
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("lic_premium_input")
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Address
-                Text(
-                    text = stringResource(R.string.address),
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp
-                    ),
-                    color = secondaryInk
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = formState.address,
-                    onValueChange = { viewModel.onAddressChanged(it) },
-                    placeholder = { Text(stringResource(R.string.enter_address)) },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done
-                    ),
-                    minLines = 2,
-                    maxLines = 3,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("lic_address_input")
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))

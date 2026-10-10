@@ -167,10 +167,13 @@ class DailyLicReminderWorker(
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
+            val currentLang = com.chiranth7.regibook.util.SettingsManager(context).currentLanguage.value
+            val displayName = account.getDisplayName(currentLang)
+            val isKn = currentLang == com.chiranth7.regibook.util.SettingsManager.LANG_KANNADA
             val title = when (status) {
-                PaymentReminderStatus.DUE_TODAY -> "LIC Premium Due Today: ${account.name}"
-                PaymentReminderStatus.OVERDUE -> "LIC Premium Overdue: ${account.name}"
-                else -> "LIC Premium Reminder: ${account.name}"
+                PaymentReminderStatus.DUE_TODAY -> if (isKn) "ಇಂದು ಪ್ರೀಮಿಯಂ ಪಾವತಿಸಬೇಕು: $displayName" else "LIC Premium Due Today: $displayName"
+                PaymentReminderStatus.OVERDUE -> if (isKn) "ಪ್ರೀಮಿಯಂ ಅವಧಿ ಮೀರಿದೆ: $displayName" else "LIC Premium Overdue: $displayName"
+                else -> if (isKn) "ಎಲ್.ಐ.ಸಿ ಪ್ರೀಮಿಯಂ ಜ್ಞಾಪನೆ: $displayName" else "LIC Premium Reminder: $displayName"
             }
 
             val content = buildString {

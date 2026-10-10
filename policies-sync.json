@@ -1,6 +1,7 @@
 [
   {
     "name": "Chiranth Janardhan Moger",
+    "kannadaName": "ಚಿರಂತ ಜನಾರ್ದನ ಮೊಗೇರ",
     "policyNumber": "739558210",
     "policyName": "736 - LIC'S JEEVAN LABH PLAN",
     "totalYears": "21/15",
@@ -15,6 +16,7 @@
   },
   {
     "name": "Koushik Janardhan Moger",
+    "kannadaName": "ಕೌಶಿಕ್ ಜನಾರ್ದನ ಮೊಗೇರ",
     "policyNumber": "748437330",
     "policyName": "736 - LIC'S JEEVAN LABH PLAN",
     "totalYears": "21/15",
@@ -29,6 +31,7 @@
   },
   {
     "name": "Mohammed Mustafa Karkada",
+    "kannadaName": "ಮೊಹಮ್ಮದ್ ಮುಸ್ತಫಾ ಕರ್ಕಾಡ",
     "policyNumber": "739557442",
     "policyName": "736 - LIC'S JEEVAN LABH PLAN",
     "totalYears": "21/15",
@@ -43,6 +46,7 @@
   },
   {
     "name": "Dsouza Juliyas",
+    "kannadaName": "ಡಿಸೋಜ ಜೂಲಿಯಸ್",
     "policyNumber": "739557021",
     "policyName": "736 - LIC'S JEEVAN LABH PLAN",
     "totalYears": "16/10",
@@ -57,6 +61,7 @@
   },
   {
     "name": "Janardhan Moger",
+    "kannadaName": "ಜನಾರ್ದನ ಮೊಗೇರ",
     "policyNumber": "738623897",
     "policyName": "736 - LIC'S JEEVAN LABH PLAN",
     "totalYears": "16/10",
@@ -71,6 +76,7 @@
   },
   {
     "name": "Chitra Narayan Naik",
+    "kannadaName": "ಚಿತ್ರಾ ನಾರಾಯಣ ನಾಯ್ಕ್",
     "policyNumber": "738624091",
     "policyName": "736 - LIC'S JEEVAN LABH PLAN",
     "totalYears": "16/10",
@@ -85,6 +91,7 @@
   },
   {
     "name": "Nagaraj Moger",
+    "kannadaName": "ನಾಗರಾಜ ಮೊಗೇರ",
     "policyNumber": "739587213",
     "policyName": "736 - LIC'S JEEVAN LABH PLAN",
     "totalYears": "21/15",
@@ -99,6 +106,7 @@
   },
   {
     "name": "Pratham Subray Bhat",
+    "kannadaName": "ಪ್ರಥಮ್ ಸುಬ್ರಾಯ ಭಟ್",
     "policyNumber": "739556991",
     "policyName": "734 - LIC'S JEEVAN TARUN",
     "totalYears": "20/15",
@@ -113,6 +121,7 @@
   },
   {
     "name": "Bhavana Moger",
+    "kannadaName": "ಭಾವನಾ ಮೊಗೇರ",
     "policyNumber": "748437327",
     "policyName": "736 - LIC'S JEEVAN LABH PLAN",
     "totalYears": "21/15",
@@ -127,6 +136,7 @@
   },
   {
     "name": "Nagaratna Anand Gond",
+    "kannadaName": "ನಾಗರತ್ನ ಆನಂದ್ ಗೌಡ",
     "policyNumber": "739587890",
     "policyName": "736 - LIC'S JEEVAN LABH PLAN",
     "totalYears": "21/15",
@@ -141,6 +151,7 @@
   },
   {
     "name": "Manjunath Nagappa Gond",
+    "kannadaName": "ಮಂಜುನಾಥ್ ನಾಗಪ್ಪ ಗೌಡ",
     "policyNumber": "739557017",
     "policyName": "736 - LIC'S JEEVAN LABH PLAN",
     "totalYears": "21/15",

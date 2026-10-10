@@ -220,6 +220,35 @@ class ExampleRobolectricTest {
   }
 
   @Test
+  fun `test policyholders kannada names`() {
+    val map = mapOf(
+      "Chiranth Janardhan Moger" to "ಚಿರಂತ ಜನಾರ್ದನ ಮೊಗೇರ",
+      "Koushik Janardhan Moger" to "ಕೌಶಿಕ್ ಜನಾರ್ದನ ಮೊಗೇರ",
+      "Mohammed Mustafa Karkada" to "ಮೊಹಮ್ಮದ್ ಮುಸ್ತಫಾ ಕರ್ಕಾಡ",
+      "Dsouza Juliyas" to "ಡಿಸೋಜ ಜೂಲಿಯಸ್",
+      "Janardhan Moger" to "ಜನಾರ್ದನ ಮೊಗೇರ",
+      "Chitra Narayan Naik" to "ಚಿತ್ರಾ ನಾರಾಯಣ ನಾಯ್ಕ್",
+      "Nagaraj Moger" to "ನಾಗರಾಜ ಮೊಗೇರ",
+      "Pratham Subray Bhat" to "ಪ್ರಥಮ್ ಸುಬ್ರಾಯ ಭಟ್",
+      "Bhavana Moger" to "ಭಾವನಾ ಮೊಗೇರ",
+      "Nagaratna Anand Gond" to "ನಾಗರತ್ನ ಆನಂದ್ ಗೌಡ",
+      "Manjunath Nagappa Gond" to "ಮಂಜುನಾಥ್ ನಾಗಪ್ಪ ಗೌಡ"
+    )
+    for ((name, expected) in map) {
+      val kn = com.chiranth7.regibook.util.KannadaNameHelper.formatDisplayName(name, SettingsManager.LANG_KANNADA)
+      assertEquals(expected, kn)
+
+      val account = LicAccount(
+        name = name,
+        policyNumber = "12345",
+        kannadaName = expected
+      )
+      assertEquals(expected, account.getDisplayName(SettingsManager.LANG_KANNADA))
+      assertEquals(name, account.getDisplayName(SettingsManager.LANG_ENGLISH))
+    }
+  }
+
+  @Test
   fun `test all Kannada string resources can be loaded and formatted`() {
     val context = ApplicationProvider.getApplicationContext<Context>()
     val config = Configuration(context.resources.configuration).apply {

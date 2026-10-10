@@ -26,5 +26,14 @@ data class LicAccount(
     val address: String = "",
     val commencementDate: String = "",
     val lastPremiumDate: String = "",
-    val maturityDate: String = ""
-)
+    val maturityDate: String = "",
+    val kannadaName: String = ""
+) {
+    fun getDisplayName(currentLanguage: String): String {
+        return if (currentLanguage == com.chiranth7.regibook.util.SettingsManager.LANG_KANNADA) {
+            if (kannadaName.isNotBlank()) kannadaName else com.chiranth7.regibook.util.KannadaNameHelper.formatDisplayName(name, currentLanguage)
+        } else {
+            name
+        }
+    }
+}

@@ -87,10 +87,6 @@ fun SettingsScreen(
     val context = LocalContext.current
 
     var showAddTypeDialog by remember { mutableStateOf(false) }
-    var showLogDialog by remember { mutableStateOf(false) }
-    var currentLogText by remember { mutableStateOf("") }
-    val clipboardManager = LocalClipboardManager.current
-
     val inkColor = MaterialTheme.colorScheme.onBackground
     val secondaryInk = MaterialTheme.colorScheme.onSurfaceVariant
 
@@ -99,106 +95,6 @@ fun SettingsScreen(
     BackHandler(enabled = !isNavigatingBack) {
         isNavigatingBack = true
         onNavigateBack()
-    }
-
-    // Dialog to view diagnostics & sync logs
-    if (showLogDialog) {
-        AlertDialog(
-            onDismissRequest = { showLogDialog = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Description,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.diagnostics_log_title),
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.Bold
-                        )
-                    )
-                }
-            },
-            text = {
-                Column {
-                    Text(
-                        text = "Errors and crashes are automatically sent to your Discord channel. Offline events are queued and delivered when connected.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = secondaryInk
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(260.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(10.dp)
-                                .verticalScroll(rememberScrollState())
-                        ) {
-                            Text(
-                                text = currentLogText,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontFamily = FontFamily.Monospace,
-                                    fontSize = 11.sp,
-                                    lineHeight = 16.sp
-                                ),
-                                color = inkColor
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        clipboardManager.setText(AnnotatedString(currentLogText))
-                        Toast.makeText(context, context.getString(R.string.log_copied), Toast.LENGTH_SHORT).show()
-                    }
-                ) {
-                    Text(stringResource(R.string.copy_log))
-                }
-            },
-            dismissButton = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                val sent = AppLogManager.sendTestAlert(context)
-                                Toast.makeText(
-                                    context,
-                                    if (sent) "Test alert sent to Discord!" else "Failed to send test alert. Check internet.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                currentLogText = AppLogManager.getFormattedLogs(context)
-                            }
-                        }
-                    ) {
-                        Text("Test Discord")
-                    }
-                    TextButton(
-                        onClick = {
-                            AppLogManager.clearLogs(context)
-                            currentLogText = AppLogManager.getFormattedLogs(context)
-                        }
-                    ) {
-                        Text(stringResource(R.string.clear_log), color = MaterialTheme.colorScheme.error)
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    TextButton(onClick = { showLogDialog = false }) {
-                        Text(stringResource(R.string.close))
-                    }
-                }
-            }
-        )
     }
 
     // Dialog asking: Add Pigmi or LIC?
@@ -647,28 +543,6 @@ fun SettingsScreen(
                         ) {
                             Text(
                                 text = if (updateState is UpdateState.Checking) "Checking GitHub..." else "Check for Updates",
-                                fontFamily = FontFamily.Serif,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        OutlinedButton(
-                            onClick = {
-                                currentLogText = AppLogManager.getFormattedLogs(context)
-                                showLogDialog = true
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Description,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = stringResource(R.string.view_diagnostics_log),
                                 fontFamily = FontFamily.Serif,
                                 fontWeight = FontWeight.Medium
                             )

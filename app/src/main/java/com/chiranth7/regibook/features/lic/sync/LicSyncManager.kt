@@ -73,7 +73,8 @@ object LicSyncManager {
                         address = incoming.address.ifBlank { existing.address },
                         commencementDate = incoming.commencementDate.ifBlank { existing.commencementDate },
                         lastPremiumDate = incoming.lastPremiumDate.ifBlank { existing.lastPremiumDate },
-                        maturityDate = incoming.maturityDate.ifBlank { existing.maturityDate }
+                        maturityDate = incoming.maturityDate.ifBlank { existing.maturityDate },
+                        kannadaName = incoming.kannadaName.ifBlank { existing.kannadaName }
                     )
                     licDao.updateAccount(updated)
                 } else {
@@ -187,6 +188,7 @@ object LicSyncManager {
             val commencementDate = item.optString("commencementDate", item.optString("commencement_date", "")).trim()
             val lastPremiumDate = item.optString("lastPremiumDate", item.optString("last_premium_date", item.optString("endOfPpt", item.optString("end_of_ppt", "")))).trim()
             val maturityDate = item.optString("maturityDate", item.optString("maturity_date", "")).trim()
+            val kannadaName = item.optString("kannadaName", item.optString("kannada_name", item.optString("nameKn", ""))).trim()
 
             list.add(
                 LicAccount(
@@ -202,7 +204,8 @@ object LicSyncManager {
                     address = sumAssured,
                     commencementDate = commencementDate,
                     lastPremiumDate = lastPremiumDate,
-                    maturityDate = maturityDate
+                    maturityDate = maturityDate,
+                    kannadaName = kannadaName
                 )
             )
         }

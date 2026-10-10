@@ -198,7 +198,7 @@ fun AddEditPigmiScreen(
                     },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Next
+                        imeAction = ImeAction.Done
                     ),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -210,71 +210,6 @@ fun AddEditPigmiScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("pigmi_name_input")
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(R.string.phone_number),
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp
-                    ),
-                    color = secondaryInk
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = formState.phoneNumber,
-                    onValueChange = { viewModel.onPhoneNumberChanged(it) },
-                    placeholder = { Text(stringResource(R.string.enter_phone)) },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Phone,
-                        imeAction = ImeAction.Next
-                    ),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = inkColor,
-                        unfocusedTextColor = inkColor,
-                        focusedBorderColor = inkColor,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("pigmi_phone_input")
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(R.string.address),
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp
-                    ),
-                    color = secondaryInk
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = formState.address,
-                    onValueChange = { viewModel.onAddressChanged(it) },
-                    placeholder = { Text(stringResource(R.string.enter_address)) },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done
-                    ),
-                    minLines = 2,
-                    maxLines = 4,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = inkColor,
-                        unfocusedTextColor = inkColor,
-                        focusedBorderColor = inkColor,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("pigmi_address_input")
                 )
 
                 Spacer(modifier = Modifier.height(28.dp))

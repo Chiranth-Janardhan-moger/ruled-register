@@ -90,7 +90,7 @@ fun MarkPaidDialog(
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = KannadaNameHelper.formatDisplayName(account.name, currentLanguage),
+                            text = account.getDisplayName(currentLanguage),
                             style = MaterialTheme.typography.titleSmall.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Serif,

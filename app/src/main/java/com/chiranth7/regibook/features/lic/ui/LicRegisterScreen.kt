@@ -351,7 +351,7 @@ private fun LicPolicyCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = KannadaNameHelper.formatDisplayName(account.name, currentLanguage),
+                    text = account.getDisplayName(currentLanguage),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = FontFamily.Serif,
                         fontWeight = FontWeight.Bold,

@@ -17,7 +17,7 @@ import com.chiranth7.regibook.features.pigmi.data.PigmiDao
         PigmiAccount::class,
         LicAccount::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -48,6 +48,12 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE lic_accounts ADD COLUMN lastPremiumDate TEXT NOT NULL DEFAULT ''")
                 db.execSQL("ALTER TABLE lic_accounts ADD COLUMN maturityDate TEXT NOT NULL DEFAULT ''")
                 rebuildPigmiAccountsTable(db)
+            }
+        }
+
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE lic_accounts ADD COLUMN kannadaName TEXT NOT NULL DEFAULT ''")
             }
         }
 
@@ -96,7 +102,7 @@ abstract class AppDatabase : RoomDatabase() {
                 AppDatabase::class.java,
                 "register_book_database"
             )
-                .addMigrations(MIGRATION_8_9, MIGRATION_9_10, MIGRATION_8_10)
+                .addMigrations(MIGRATION_8_9, MIGRATION_9_10, MIGRATION_8_10, MIGRATION_10_11)
                 .fallbackToDestructiveMigration(true)
                 .fallbackToDestructiveMigrationOnDowngrade(true)
                 .build()
