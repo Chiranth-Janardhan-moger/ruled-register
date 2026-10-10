@@ -57,8 +57,7 @@ object AppLogManager {
         }
     }
 
-    const val DISCORD_WEBHOOK_URL =
-        "https://discord.com/api/webhooks/1557450236496969849/Db61JCkCLRnGjNM0iLFvfinnxlH4sV05gxX8D1MOGpclOTU-Q-Wj2PHrVyFoqDuc4Eys"
+    val DISCORD_WEBHOOK_URL: String = com.chiranth7.regibook.BuildConfig.DISCORD_WEBHOOK_URL
 
     fun log(
         context: Context,

@@ -325,7 +325,9 @@ class ExampleRobolectricTest {
     assertTrue(payloadJson.contains("LicSyncManager.kt:76"))
     assertTrue(payloadJson.contains("Connection timeout"))
 
-    assertTrue(com.chiranth7.regibook.util.log.AppLogManager.DISCORD_WEBHOOK_URL.startsWith("https://discord.com/api/webhooks/"))
+    // Verify DISCORD_WEBHOOK_URL is configured via BuildConfig
+    val configuredUrl = com.chiranth7.regibook.util.log.AppLogManager.DISCORD_WEBHOOK_URL
+    assertTrue(configuredUrl.isEmpty() || configuredUrl.startsWith("https://discord.com/api/webhooks/"))
   }
 
   @Test

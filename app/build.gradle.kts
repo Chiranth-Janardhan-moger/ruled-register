@@ -1,9 +1,21 @@
+import java.util.Properties
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.google.devtools.ksp)
   alias(libs.plugins.secrets)
 }
+
+val localProperties = Properties().apply {
+  val localPropsFile = rootProject.file("local.properties")
+  if (localPropsFile.exists()) {
+    localPropsFile.inputStream().use { load(it) }
+  }
+}
+val discordWebhookUrl: String = System.getenv("DISCORD_WEBHOOK_URL")
+  ?: localProperties.getProperty("DISCORD_WEBHOOK_URL")
+  ?: ""
 
 android {
   namespace = "com.chiranth7.regibook"
@@ -16,6 +28,7 @@ android {
     versionCode = 19
     versionName = "1.0.18"
 
+    buildConfigField("String", "DISCORD_WEBHOOK_URL", "\"$discordWebhookUrl\"")
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
