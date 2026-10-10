@@ -535,6 +535,114 @@ class ExampleRobolectricTest {
     assertEquals("1100", account.srNo.toString())
     assertEquals(4, account.srNo.toString().length)
   }
+
+  @Test
+  fun `test isHalfYearly detection`() {
+    assertTrue(PaymentReminderHelper.isHalfYearly(premiumAmount = "₹9,068/Half Year"))
+    assertTrue(PaymentReminderHelper.isHalfYearly(premiumAmount = "₹9,867/half year"))
+    assertTrue(PaymentReminderHelper.isHalfYearly(premiumAmount = "6 Months"))
+    assertTrue(PaymentReminderHelper.isHalfYearly(lastPaymentDate = "21/05/2026", nextPaymentDate = "21/11/2026"))
+    assertFalse(PaymentReminderHelper.isHalfYearly(premiumAmount = "₹11,873/Year"))
+    assertFalse(PaymentReminderHelper.isHalfYearly(lastPaymentDate = "28/06/2025", nextPaymentDate = "28/06/2026"))
+  }
+
+  @Test
+  fun `test half-yearly policy advance moves forward by 6 months`() {
+    val adv = PaymentReminderHelper.calculateNextPaymentAdvance(
+      currentNextDate = "21/11/2026",
+      totalYears = "21/15",
+      forceMatured = false,
+      lastPaymentDate = "21/05/2026",
+      storedCommencementDate = "21/05/2025",
+      premiumAmount = "₹9,068/Half Year"
+    )
+    assertFalse(adv.isMatured)
+    assertEquals("21/05/2027", adv.newNextPaymentDate)
+
+    // And advancing again
+    val advNext = PaymentReminderHelper.calculateNextPaymentAdvance(
+      currentNextDate = "21/05/2027",
+      totalYears = "21/15",
+      forceMatured = false,
+      lastPaymentDate = "21/11/2026",
+      storedCommencementDate = "21/05/2025",
+      premiumAmount = "₹9,068/Half Year"
+    )
+    assertFalse(advNext.isMatured)
+    assertEquals("21/11/2027", advNext.newNextPaymentDate)
+  }
+
+  @Test
+  fun `test half-yearly policy schedule calculates years and 6 months correctly`() {
+    // 21/15 PPT = 15 years = 30 half-yearly payments.
+    // Commencement 21/05/2025. Next payment 21/11/2025 -> 1 payment made, 29 payments left.
+    // 29 payments = 14 years and 6 months left!
+    val schedule29 = PaymentReminderHelper.calculatePolicySchedule(
+      totalYears = "21/15",
+      nextPaymentDate = "21/11/2025",
+      lastPaymentDate = "21/05/2025",
+      storedCommencement = "21/05/2025",
+      storedLastPremium = "21/05/2040",
+      storedMaturity = "21/05/2046",
+      premiumAmount = "₹9,068/Half Year"
+    )
+    assertNotNull(schedule29)
+    assertEquals(29, schedule29!!.remainingPaymentsCount)
+    assertEquals(14, schedule29.remainingYears)
+    assertEquals(6, schedule29.remainingMonths)
+    assertTrue(schedule29.isHalfYearly)
+
+    // Next payment 21/05/2026 -> 2 payments made, 28 payments left = 14 years, 0 months.
+    val schedule28 = PaymentReminderHelper.calculatePolicySchedule(
+      totalYears = "21/15",
+      nextPaymentDate = "21/05/2026",
+      lastPaymentDate = "21/11/2025",
+      storedCommencement = "21/05/2025",
+      storedLastPremium = "21/05/2040",
+      storedMaturity = "21/05/2046",
+      premiumAmount = "₹9,068/Half Year"
+    )
+    assertNotNull(schedule28)
+    assertEquals(28, schedule28!!.remainingPaymentsCount)
+    assertEquals(14, schedule28.remainingYears)
+    assertEquals(0, schedule28.remainingMonths)
+
+    // Next payment 21/11/2026 -> 3 payments made, 27 payments left = 13 years, 6 months.
+    val schedule27 = PaymentReminderHelper.calculatePolicySchedule(
+      totalYears = "21/15",
+      nextPaymentDate = "21/11/2026",
+      lastPaymentDate = "21/05/2026",
+      storedCommencement = "21/05/2025",
+      storedLastPremium = "21/05/2040",
+      storedMaturity = "21/05/2046",
+      premiumAmount = "₹9,068/Half Year"
+    )
+    assertNotNull(schedule27)
+    assertEquals(27, schedule27!!.remainingPaymentsCount)
+    assertEquals(13, schedule27.remainingYears)
+    assertEquals(6, schedule27.remainingMonths)
+  }
+
+  @Test
+  fun `test half-yearly strings in English and Kannada`() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+
+    // English string format
+    val enStr = context.getString(R.string.years_and_months_remaining_to_pay, 14, 6, 29)
+    assertEquals("14 Years 6 Months to Pay (29 Premiums Left)", enStr)
+
+    // Kannada localized context
+    val config = Configuration(context.resources.configuration).apply {
+      setLocale(Locale("kn"))
+    }
+    val knContext = context.createConfigurationContext(config)
+    val knStr = knContext.getString(R.string.years_and_months_remaining_to_pay, 14, 6, 29)
+    assertTrue(knStr.contains("14"))
+    assertTrue(knStr.contains("ವರ್ಷ"))
+    assertTrue(knStr.contains("6"))
+    assertTrue(knStr.contains("ತಿಂಗಳು"))
+    assertTrue(knStr.contains("29"))
+  }
 }
 
 

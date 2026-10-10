@@ -99,7 +99,7 @@
     <string name="notified">ಸೂಚಿಸಲಾಗಿದೆ</string>
     <string name="mark_paid_confirm_title">ಪ್ರೀಮಿಯಂ ಪಾವತಿಸಲಾಗಿದೆ ಎಂದು ಗುರುತಿಸಿ</string>
     <string name="current_due_date">ಪ್ರಸ್ತುತ ಗಡುವು ದಿನಾಂಕ</string>
-    <string name="new_next_due_date">ಮುಂದಿನ ಗಡುವು (+1 ವರ್ಷ)</string>
+    <string name="new_next_due_date">ಮುಂದಿನ ಗಡುವು ದಿನಾಂಕ</string>
     <string name="payment_date">ಪಾವತಿ ದಿನಾಂಕ</string>
     <string name="final_payment_matured">ಅಂತಿಮ ಕಂತು (ಪಾಲಿಸಿ ಮುಕ್ತಾಯ)</string>
     <string name="confirm_payment">ಖಚಿತಪಡಿಸಿ</string>
@@ -108,11 +108,6 @@
     <string name="policy_completed_success">ಪಾವತಿ ದಾಖಲಾಗಿದೆ! ಪಾಲಿಸಿ ಸಂಪೂರ್ಣ ಪಾವತಿಯಾಗಿ ಮುಕ್ತಾಯಗೊಂಡಿದೆ.</string>
     <string name="auto_sync_status">ಸ್ವಯಂಚಾಲಿತ ಸಿಂಕ್: ಸಕ್ರಿಯವಾಗಿದೆ</string>
     <string name="auto_sync_description">ಪಾಲಿಸಿಗಳು ಆ್ಯಪ್ ತೆರೆದಾಗ ಮತ್ತು ಹಿನ್ನೆಲೆಯಲ್ಲಿ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಸಿಂಕ್ ಆಗುತ್ತವೆ</string>
-    <string name="view_diagnostics_log">ಸಿಂಕ್ ಮತ್ತು ದೋಷ ಲಾಗ್ ನೋಡಿ</string>
-    <string name="diagnostics_log_title">ಸಿಂಕ್ ಮತ್ತು ದೋಷ ಲಾಗ್</string>
-    <string name="copy_log">ಲಾಗ್ ನಕಲಿಸಿ</string>
-    <string name="clear_log">ತೆರವುಗೊಳಿಸಿ</string>
-    <string name="log_copied">ದೋಷ ಲಾಗ್‌ಗಳನ್ನು ನಕಲಿಸಲಾಗಿದೆ</string>
     <string name="close">ಮುಚ್ಚಿ</string>
     <string name="logs">ಲಾಗ್‌ಗಳು</string>
     <string name="end_of_premium_term">ಕೊನೆಯ ಕಂತಿನ ದಿನಾಂಕ</string>
@@ -120,6 +115,8 @@
     <string name="commencement_date">ಆರಂಭದ ದಿನಾಂಕ</string>
     <string name="policy_schedule_title">ಕಾಲಾವಧಿ ಮತ್ತು ಕಂತುಗಳ ವಿವರ</string>
     <string name="years_remaining_to_pay">ಇನ್ನೂ %1$d ವರ್ಷ ಪಾವತಿಸಬೇಕು (%2$d ಕಂತುಗಳು ಬಾಕಿ)</string>
+    <string name="years_and_months_remaining_to_pay">ಇನ್ನೂ %1$d ವರ್ಷ %2$d ತಿಂಗಳು ಪಾವತಿಸಬೇಕು (%3$d ಕಂತುಗಳು ಬಾಕಿ)</string>
+    <string name="months_remaining_to_pay">ಇನ್ನೂ %1$d ತಿಂಗಳು ಪಾವತಿಸಬೇಕು (%2$d ಕಂತುಗಳು ಬಾಕಿ)</string>
     <string name="final_premium_due">ಕೊನೆಯ ಕಂತು ಪಾವತಿ ಬಾಕಿ</string>
     <string name="all_premiums_paid">ಎಲ್ಲಾ ಕಂತುಗಳು ಪಾವತಿಯಾಗಿವೆ</string>
 </resources>

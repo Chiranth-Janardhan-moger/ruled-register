@@ -13,9 +13,6 @@ interface PigmiDao {
     @Query("SELECT * FROM pigmi_accounts ORDER BY srNo ASC, id ASC")
     fun getAllAccounts(): Flow<List<PigmiAccount>>
 
-    @Query("SELECT * FROM pigmi_accounts WHERE id = :id LIMIT 1")
-    fun getAccountById(id: Long): Flow<PigmiAccount?>
-
     @Query("SELECT * FROM pigmi_accounts WHERE name LIKE '%' || :query || '%' OR phoneNumber LIKE '%' || :query || '%' OR accountNumber LIKE '%' || :query || '%' OR address LIKE '%' || :query || '%' ORDER BY srNo ASC")
     fun searchAccounts(query: String): Flow<List<PigmiAccount>>
 

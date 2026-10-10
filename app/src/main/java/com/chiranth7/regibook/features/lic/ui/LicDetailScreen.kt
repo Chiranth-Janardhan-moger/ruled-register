@@ -632,14 +632,15 @@ fun LicDetailScreen(
                             }
 
                             // Policy Schedule Section: Remaining Count, Last Premium Date & Maturity Date
-                            val scheduleInfo = remember(acc.totalYears, acc.nextPaymentDate, acc.lastPaymentDate, acc.commencementDate, acc.lastPremiumDate, acc.maturityDate) {
+                            val scheduleInfo = remember(acc.totalYears, acc.nextPaymentDate, acc.lastPaymentDate, acc.commencementDate, acc.lastPremiumDate, acc.maturityDate, acc.premiumAmount) {
                                 PaymentReminderHelper.calculatePolicySchedule(
                                     totalYears = acc.totalYears,
                                     nextPaymentDate = acc.nextPaymentDate,
                                     lastPaymentDate = acc.lastPaymentDate,
                                     storedCommencement = acc.commencementDate,
                                     storedLastPremium = acc.lastPremiumDate,
-                                    storedMaturity = acc.maturityDate
+                                    storedMaturity = acc.maturityDate,
+                                    premiumAmount = acc.premiumAmount
                                 )
                             }
 
@@ -692,7 +693,22 @@ fun LicDetailScreen(
                                             text = when {
                                                 scheduleInfo.isFullyPaid -> stringResource(R.string.all_premiums_paid)
                                                 scheduleInfo.remainingPaymentsCount == 1 -> stringResource(R.string.final_premium_due)
-                                                else -> stringResource(R.string.years_remaining_to_pay, scheduleInfo.remainingPaymentsCount, scheduleInfo.remainingPaymentsCount)
+                                                scheduleInfo.remainingYears > 0 && scheduleInfo.remainingMonths > 0 -> stringResource(
+                                                    R.string.years_and_months_remaining_to_pay,
+                                                    scheduleInfo.remainingYears,
+                                                    scheduleInfo.remainingMonths,
+                                                    scheduleInfo.remainingPaymentsCount
+                                                )
+                                                scheduleInfo.remainingMonths > 0 -> stringResource(
+                                                    R.string.months_remaining_to_pay,
+                                                    scheduleInfo.remainingMonths,
+                                                    scheduleInfo.remainingPaymentsCount
+                                                )
+                                                else -> stringResource(
+                                                    R.string.years_remaining_to_pay,
+                                                    scheduleInfo.remainingYears,
+                                                    scheduleInfo.remainingPaymentsCount
+                                                )
                                             },
                                             style = MaterialTheme.typography.bodyMedium.copy(
                                                 fontWeight = FontWeight.Bold,

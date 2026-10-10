@@ -39,7 +39,8 @@ fun MarkPaidDialog(
             forceMatured = isFinalPayment,
             lastPaymentDate = account.lastPaymentDate,
             storedLastPremiumDate = account.lastPremiumDate,
-            storedCommencementDate = account.commencementDate
+            storedCommencementDate = account.commencementDate,
+            premiumAmount = account.premiumAmount
         )
     }
 
@@ -191,7 +192,8 @@ fun MarkPaidDialog(
                         lastPaymentDate = advanceResult.newLastPaymentDate,
                         storedCommencement = account.commencementDate,
                         storedLastPremium = account.lastPremiumDate,
-                        storedMaturity = account.maturityDate
+                        storedMaturity = account.maturityDate,
+                        premiumAmount = account.premiumAmount
                     )
                 }
 
@@ -202,8 +204,25 @@ fun MarkPaidDialog(
                             stringResource(R.string.all_premiums_paid)
                         } else if (scheduleAfter.remainingPaymentsCount == 1) {
                             stringResource(R.string.final_premium_due)
+                        } else if (scheduleAfter.remainingYears > 0 && scheduleAfter.remainingMonths > 0) {
+                            stringResource(
+                                R.string.years_and_months_remaining_to_pay,
+                                scheduleAfter.remainingYears,
+                                scheduleAfter.remainingMonths,
+                                scheduleAfter.remainingPaymentsCount
+                            )
+                        } else if (scheduleAfter.remainingMonths > 0) {
+                            stringResource(
+                                R.string.months_remaining_to_pay,
+                                scheduleAfter.remainingMonths,
+                                scheduleAfter.remainingPaymentsCount
+                            )
                         } else {
-                            stringResource(R.string.years_remaining_to_pay, scheduleAfter.remainingPaymentsCount, scheduleAfter.remainingPaymentsCount)
+                            stringResource(
+                                R.string.years_remaining_to_pay,
+                                scheduleAfter.remainingYears,
+                                scheduleAfter.remainingPaymentsCount
+                            )
                         },
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.SemiBold,

@@ -49,33 +49,11 @@ class PigmiViewModel(
             initialValue = emptyList()
         )
 
-    private val _selectedAccountId = MutableStateFlow<Long?>(null)
-    val selectedAccountId: StateFlow<Long?> = _selectedAccountId.asStateFlow()
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val selectedAccount: StateFlow<PigmiAccount?> = _selectedAccountId
-        .flatMapLatest { id ->
-            if (id != null) {
-                repository.getAccountById(id)
-            } else {
-                MutableStateFlow(null)
-            }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
-        )
-
     private val _formState = MutableStateFlow(PigmiFormState())
     val formState: StateFlow<PigmiFormState> = _formState.asStateFlow()
 
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
-    }
-
-    fun selectAccount(id: Long?) {
-        _selectedAccountId.value = id
     }
 
     fun prepareNewAccount() {
@@ -196,7 +174,6 @@ class PigmiViewModel(
                 finalId = repository.insert(newAccount)
             }
             _formState.value = PigmiFormState()
-            _selectedAccountId.value = finalId
             onSuccess(finalId)
         }
     }
@@ -204,9 +181,6 @@ class PigmiViewModel(
     fun deleteAccount(account: PigmiAccount, onSuccess: () -> Unit) {
         viewModelScope.launch {
             repository.delete(account)
-            if (_selectedAccountId.value == account.id) {
-                _selectedAccountId.value = null
-            }
             onSuccess()
         }
     }

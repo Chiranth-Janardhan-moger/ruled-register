@@ -143,6 +143,38 @@ object PaymentReminderHelper {
         return "Dear $name, gentle reminder that your LIC Policy premium$amountDesc for policy $policyDesc is due on $nextPaymentDate. Kindly pay before the due date to keep your policy active."
     }
 
+    fun isHalfYearly(
+        premiumAmount: String = "",
+        lastPaymentDate: String = "",
+        nextPaymentDate: String = ""
+    ): Boolean {
+        val cleanAmount = premiumAmount.lowercase()
+        if (cleanAmount.contains("half") ||
+            cleanAmount.contains("6 month") ||
+            cleanAmount.contains("6month") ||
+            cleanAmount.contains("6-month") ||
+            cleanAmount.contains("semi")
+        ) {
+            return true
+        }
+        if (lastPaymentDate.isNotBlank() && nextPaymentDate.isNotBlank()) {
+            val lastD = parseDate(lastPaymentDate)
+            val nextD = parseDate(nextPaymentDate)
+            if (lastD != null && nextD != null) {
+                val calLast = Calendar.getInstance().apply { time = lastD }
+                val calNext = Calendar.getInstance().apply { time = nextD }
+                val monthsDiff = Math.abs(
+                    (calNext.get(Calendar.YEAR) - calLast.get(Calendar.YEAR)) * 12 +
+                            (calNext.get(Calendar.MONTH) - calLast.get(Calendar.MONTH))
+                )
+                if (monthsDiff in 5..7) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
     fun parseTermAndPpt(totalYears: String): Pair<Int, Int> {
         val clean = totalYears.trim()
         if (clean.isBlank()) return Pair(0, 0)
@@ -168,6 +200,9 @@ object PaymentReminderHelper {
         val endOfPremiumTermDate: String,
         val maturityDate: String,
         val remainingPaymentsCount: Int,
+        val remainingYears: Int = 0,
+        val remainingMonths: Int = 0,
+        val isHalfYearly: Boolean = false,
         val isFullyPaid: Boolean
     )
 
@@ -177,7 +212,8 @@ object PaymentReminderHelper {
         lastPaymentDate: String = "",
         storedCommencement: String = "",
         storedLastPremium: String = "",
-        storedMaturity: String = ""
+        storedMaturity: String = "",
+        premiumAmount: String = ""
     ): PolicyScheduleInfo? {
         val (term, ppt) = parseTermAndPpt(totalYears)
         if (term <= 0 && ppt <= 0 && storedLastPremium.isBlank() && storedMaturity.isBlank()) {
@@ -187,16 +223,21 @@ object PaymentReminderHelper {
         val isCompleted = nextPaymentDate.trim().equals("Completed", ignoreCase = true) ||
                 nextPaymentDate.trim().contains("Matured", ignoreCase = true)
 
+        val isHalf = isHalfYearly(premiumAmount, lastPaymentDate, nextPaymentDate)
+
         val commDate = when {
             storedCommencement.isNotBlank() -> storedCommencement.trim()
-            lastPaymentDate.isNotBlank() -> {
-                val p = parseDate(lastPaymentDate)
-                if (p != null) SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(p) else ""
+            lastPaymentDate.isNotBlank() && parseDate(lastPaymentDate) != null -> {
+                val p = parseDate(lastPaymentDate)!!
+                SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(p)
             }
             nextPaymentDate.isNotBlank() && !isCompleted -> {
                 val p = parseDate(nextPaymentDate)
                 if (p != null) {
-                    val cal = Calendar.getInstance().apply { time = p; add(Calendar.YEAR, -1) }
+                    val cal = Calendar.getInstance().apply {
+                        time = p
+                        if (isHalf) add(Calendar.MONTH, -6) else add(Calendar.YEAR, -1)
+                    }
                     SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(cal.time)
                 } else ""
             }
@@ -229,21 +270,47 @@ object PaymentReminderHelper {
 
         val remainingCount = if (isCompleted) {
             0
-        } else if (ppt > 0 && commYear > 0) {
+        } else if (ppt > 0) {
+            val totalPayments = if (isHalf) ppt * 2 else ppt
             val nextCal = parseDate(nextPaymentDate)?.let { Calendar.getInstance().apply { time = it } }
-            val nextYear = nextCal?.get(Calendar.YEAR) ?: (commYear + 1)
-            val finalPaymentYear = commYear + ppt - 1
-            val rem = finalPaymentYear - nextYear + 1
-            if (rem < 0) 0 else rem
+            if (nextCal != null && commCal != null) {
+                val elapsedMonths = (nextCal.get(Calendar.YEAR) - commCal.get(Calendar.YEAR)) * 12 +
+                        (nextCal.get(Calendar.MONTH) - commCal.get(Calendar.MONTH))
+                val intervalMonths = if (isHalf) 6 else 12
+                val elapsedPayments = (elapsedMonths / intervalMonths).coerceAtLeast(0)
+                val rem = totalPayments - elapsedPayments
+                if (rem < 0) 0 else rem
+            } else if (nextCal != null && commYear > 0) {
+                val nextYear = nextCal.get(Calendar.YEAR)
+                val finalPaymentYear = commYear + ppt - 1
+                val remYears = finalPaymentYear - nextYear + 1
+                val rem = if (isHalf) remYears * 2 else remYears
+                if (rem < 0) 0 else rem
+            } else {
+                0
+            }
         } else if (storedLastPremium.isNotBlank()) {
             val endCal = parseDate(storedLastPremium)?.let { Calendar.getInstance().apply { time = it } }
             val nextCal = parseDate(nextPaymentDate)?.let { Calendar.getInstance().apply { time = it } }
             if (endCal != null && nextCal != null) {
-                val rem = endCal.get(Calendar.YEAR) - nextCal.get(Calendar.YEAR)
+                val monthsDiff = (endCal.get(Calendar.YEAR) - nextCal.get(Calendar.YEAR)) * 12 +
+                        (endCal.get(Calendar.MONTH) - nextCal.get(Calendar.MONTH))
+                val intervalMonths = if (isHalf) 6 else 12
+                val rem = (monthsDiff / intervalMonths)
                 if (rem < 0) 0 else rem
             } else 0
         } else {
             0
+        }
+
+        val remYears: Int
+        val remMonths: Int
+        if (isHalf) {
+            remYears = remainingCount / 2
+            remMonths = (remainingCount % 2) * 6
+        } else {
+            remYears = remainingCount
+            remMonths = 0
         }
 
         return PolicyScheduleInfo(
@@ -253,6 +320,9 @@ object PaymentReminderHelper {
             endOfPremiumTermDate = endOfPpt,
             maturityDate = matDate,
             remainingPaymentsCount = remainingCount,
+            remainingYears = remYears,
+            remainingMonths = remMonths,
+            isHalfYearly = isHalf,
             isFullyPaid = isCompleted || remainingCount <= 0
         )
     }
@@ -263,7 +333,8 @@ object PaymentReminderHelper {
         forceMatured: Boolean = false,
         lastPaymentDate: String = "",
         storedLastPremiumDate: String = "",
-        storedCommencementDate: String = ""
+        storedCommencementDate: String = "",
+        premiumAmount: String = ""
     ): NextPaymentAdvanceResult {
         val todayStr = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
         if (forceMatured) {
@@ -283,11 +354,16 @@ object PaymentReminderHelper {
             )
         }
 
+        val isHalf = isHalfYearly(premiumAmount, lastPaymentDate, currentNextDate)
         val cal = Calendar.getInstance().apply {
             time = parsed
         }
         val currentDueYear = cal.get(Calendar.YEAR)
-        cal.add(Calendar.YEAR, 1)
+        if (isHalf) {
+            cal.add(Calendar.MONTH, 6)
+        } else {
+            cal.add(Calendar.YEAR, 1)
+        }
         val nextYear = cal.get(Calendar.YEAR)
         val advancedDateStr = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(cal.time)
 
@@ -295,30 +371,51 @@ object PaymentReminderHelper {
 
         val (term, ppt) = parseTermAndPpt(totalYears)
         if (ppt > 0) {
-            val commYear = when {
-                storedCommencementDate.isNotBlank() -> {
-                    parseDate(storedCommencementDate)?.let { Calendar.getInstance().apply { time = it }.get(Calendar.YEAR) } ?: (currentDueYear - 1)
-                }
-                lastPaymentDate.isNotBlank() -> {
-                    parseDate(lastPaymentDate)?.let { Calendar.getInstance().apply { time = it }.get(Calendar.YEAR) } ?: (currentDueYear - 1)
-                }
-                else -> currentDueYear - 1
+            val commDateParsed = when {
+                storedCommencementDate.isNotBlank() -> parseDate(storedCommencementDate)
+                lastPaymentDate.isNotBlank() -> parseDate(lastPaymentDate)
+                else -> null
             }
-            val finalPaymentYear = commYear + ppt - 1
-            if (currentDueYear >= finalPaymentYear || nextYear > finalPaymentYear) {
-                isMatured = true
+            val commCal = commDateParsed?.let { Calendar.getInstance().apply { time = it } }
+
+            if (isHalf) {
+                val totalPayments = ppt * 2
+                val finalPaymentIndex = totalPayments - 1
+                if (commCal != null) {
+                    val origCal = Calendar.getInstance().apply { time = parsed }
+                    val currentPaymentIndex = ((origCal.get(Calendar.YEAR) - commCal.get(Calendar.YEAR)) * 12 +
+                            (origCal.get(Calendar.MONTH) - commCal.get(Calendar.MONTH))) / 6
+                    if (currentPaymentIndex >= finalPaymentIndex) {
+                        isMatured = true
+                    }
+                } else {
+                    val commYear = currentDueYear - 1
+                    val finalPaymentYear = commYear + ppt - 1
+                    if (currentDueYear >= finalPaymentYear) {
+                        isMatured = true
+                    }
+                }
+            } else {
+                val commYear = commCal?.get(Calendar.YEAR) ?: (currentDueYear - 1)
+                val finalPaymentYear = commYear + ppt - 1
+                if (currentDueYear >= finalPaymentYear || nextYear > finalPaymentYear) {
+                    isMatured = true
+                }
             }
         } else if (storedLastPremiumDate.isNotBlank()) {
             val expCal = parseDate(storedLastPremiumDate)?.let { Calendar.getInstance().apply { time = it } }
-            if (expCal != null && (cal.after(expCal) || nextYear >= expCal.get(Calendar.YEAR))) {
-                isMatured = true
+            if (expCal != null) {
+                val origCal = Calendar.getInstance().apply { time = parsed }
+                if (!origCal.before(expCal) || cal.after(expCal)) {
+                    isMatured = true
+                }
             }
         } else {
             val cleanTotal = totalYears.trim()
             val expiryDate = parseDate(cleanTotal)
             if (expiryDate != null) {
                 val expCal = Calendar.getInstance().apply { time = expiryDate }
-                if (cal.after(expCal) || cal.get(Calendar.YEAR) >= expCal.get(Calendar.YEAR)) {
+                if (cal.after(expCal) || !cal.before(expCal)) {
                     isMatured = true
                 }
             } else {
@@ -326,7 +423,7 @@ object PaymentReminderHelper {
                 val match = yearRegex.find(cleanTotal)
                 if (match != null) {
                     val expYear = match.value.toIntOrNull()
-                    if (expYear != null && nextYear >= expYear) {
+                    if (expYear != null && cal.get(Calendar.YEAR) >= expYear) {
                         isMatured = true
                     }
                 }

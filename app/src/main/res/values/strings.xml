@@ -98,7 +98,7 @@
     <string name="notified">Notified</string>
     <string name="mark_paid_confirm_title">Mark Premium as Paid</string>
     <string name="current_due_date">Current Due Date</string>
-    <string name="new_next_due_date">New Due Date (+1 Year)</string>
+    <string name="new_next_due_date">New Next Due Date</string>
     <string name="payment_date">Payment Date</string>
     <string name="final_payment_matured">Final Payment (Policy Matured)</string>
     <string name="confirm_payment">Confirm Payment</string>
@@ -107,11 +107,6 @@
     <string name="policy_completed_success">Payment recorded! Policy is now fully paid and matured.</string>
     <string name="auto_sync_status">Auto-Sync: Active (Background)</string>
     <string name="auto_sync_description">Policies automatically sync silently on launch and daily in background</string>
-    <string name="view_diagnostics_log">View Sync &amp; Error Logs</string>
-    <string name="diagnostics_log_title">Diagnostics &amp; Sync Log</string>
-    <string name="copy_log">Copy Log</string>
-    <string name="clear_log">Clear</string>
-    <string name="log_copied">Log copied to clipboard</string>
     <string name="close">Close</string>
     <string name="logs">Logs</string>
     <string name="end_of_premium_term">Last Premium Date</string>
@@ -119,6 +114,8 @@
     <string name="commencement_date">Commencement Date</string>
     <string name="policy_schedule_title">Policy Term &amp; Schedule</string>
     <string name="years_remaining_to_pay">%1$d Years to Pay (%2$d Premiums Left)</string>
+    <string name="years_and_months_remaining_to_pay">%1$d Years %2$d Months to Pay (%3$d Premiums Left)</string>
+    <string name="months_remaining_to_pay">%1$d Months to Pay (%2$d Premiums Left)</string>
     <string name="final_premium_due">Final Premium Due (1 Payment Left)</string>
     <string name="all_premiums_paid">All Premiums Paid (Completed)</string>
 </resources>

@@ -235,20 +235,6 @@ object AppLogManager {
         sentCount
     }
 
-    suspend fun sendTestAlert(context: Context): Boolean = withContext(Dispatchers.IO) {
-        val testEntry = AppLogEntry(
-            timestamp = System.currentTimeMillis(),
-            tag = "TestAlert",
-            message = "RegiBook Discord Webhook connection test successful!",
-            isError = true,
-            page = currentScreen,
-            location = "SettingsScreen.kt (Manual Test)",
-            isSentToRemote = false
-        )
-        val payload = buildDiscordPayload(context, testEntry)
-        sendToDiscord(payload)
-    }
-
     fun sendToDiscordSync(jsonPayload: String): Boolean {
         if (isTestEnvironment || DISCORD_WEBHOOK_URL.isBlank()) return false
         var conn: HttpURLConnection? = null

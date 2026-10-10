@@ -5,8 +5,6 @@ import kotlinx.coroutines.flow.Flow
 class PigmiRepository(private val dao: PigmiDao) {
     val allAccounts: Flow<List<PigmiAccount>> = dao.getAllAccounts()
 
-    fun getAccountById(id: Long): Flow<PigmiAccount?> = dao.getAccountById(id)
-
     fun searchAccounts(query: String): Flow<List<PigmiAccount>> = dao.searchAccounts(query)
 
     suspend fun insert(account: PigmiAccount): Long = dao.insertAccount(account)
