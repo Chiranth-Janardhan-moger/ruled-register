@@ -7,8 +7,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -69,7 +69,7 @@ fun NumericFastScrollSidebar(
 
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
-    fun handlePosition(y: Float, isRelease: Boolean = false) {
+    fun handlePosition(y: Float) {
         if (columnHeight <= 0f) return
         val clampedY = y.coerceIn(0f, columnHeight)
         coroutineScope.launch {
@@ -86,8 +86,6 @@ fun NumericFastScrollSidebar(
         if (activeNumber != targetNumber) {
             activeNumber = targetNumber
             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-        }
-        if (isRelease) {
             onScrollToSrNo(targetNumber)
         }
     }
@@ -158,40 +156,29 @@ fun NumericFastScrollSidebar(
                     columnHeight = coordinates.size.height.toFloat()
                 }
                 .pointerInput(labels, maxSrNo) {
-                    detectTapGestures(
-                        onPress = { offset ->
-                            isDragging = true
-                            handlePosition(offset.y)
-                            val released = tryAwaitRelease()
-                            if (released) {
-                                handlePosition(offset.y, isRelease = true)
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        isDragging = true
+                        handlePosition(down.position.y)
+
+                        var pointerId = down.id
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val change = event.changes.firstOrNull { it.id == pointerId }
+                                ?: event.changes.firstOrNull()
+
+                            if (change == null || !change.pressed) {
+                                break
                             }
-                            isDragging = false
-                            activeNumber = null
-                        }
-                    )
-                }
-                .pointerInput(labels, maxSrNo) {
-                    detectVerticalDragGestures(
-                        onDragStart = { offset ->
-                            isDragging = true
-                            handlePosition(offset.y)
-                        },
-                        onDragEnd = {
-                            val finalY = animatedTouchY.targetValue
-                            handlePosition(finalY, isRelease = true)
-                            isDragging = false
-                            activeNumber = null
-                        },
-                        onDragCancel = {
-                            isDragging = false
-                            activeNumber = null
-                        },
-                        onVerticalDrag = { change, _ ->
+
+                            pointerId = change.id
                             change.consume()
                             handlePosition(change.position.y)
                         }
-                    )
+
+                        isDragging = false
+                        activeNumber = null
+                    }
                 },
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

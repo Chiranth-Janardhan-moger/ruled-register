@@ -140,13 +140,7 @@ fun PigmiRegisterScreen(
             accounts.maxOfOrNull { it.srNo } ?: 1
         }
         val maxDigits = maxSrNo.toString().length
-        val baseMarginWidth = when {
-            maxDigits <= 2 -> 52.dp
-            maxDigits == 3 -> 62.dp
-            maxDigits == 4 -> 76.dp
-            else -> 88.dp
-        }
-        val marginWidth = baseMarginWidth * fontScale.coerceIn(1f, 1.5f)
+        val marginWidth = if (maxDigits >= 5) 58.dp else 54.dp
 
         Box(
             modifier = modifier
@@ -195,75 +189,84 @@ fun PigmiRegisterScreen(
                                 )
                             }
 
-                            Row(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(42.dp)
-                                    .padding(end = 4.dp)
-                                    .background(
-                                        color = MaterialTheme.colorScheme.surfaceVariant,
-                                        shape = RoundedCornerShape(21.dp)
+                            Box(modifier = Modifier.weight(1f)) {
+                                androidx.compose.runtime.CompositionLocalProvider(
+                                    LocalDensity provides androidx.compose.ui.unit.Density(
+                                        density = LocalDensity.current.density,
+                                        fontScale = 1.0f
                                     )
-                                    .padding(horizontal = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = null,
-                                    tint = secondaryInk,
-                                    modifier = Modifier.size(18.dp)
-                                )
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(42.dp)
+                                            .padding(end = 4.dp)
+                                            .background(
+                                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                                shape = RoundedCornerShape(21.dp)
+                                            )
+                                            .padding(horizontal = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Search,
+                                            contentDescription = null,
+                                            tint = secondaryInk,
+                                            modifier = Modifier.size(18.dp)
+                                        )
 
-                                Spacer(modifier = Modifier.width(8.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
 
-                                BasicTextField(
-                                    value = searchQuery,
-                                    onValueChange = { viewModel.updateSearchQuery(it) },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .focusRequester(focusRequester)
-                                        .testTag("search_input"),
-                                    singleLine = true,
-                                    textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                        color = inkColor,
-                                        fontSize = 16.sp
-                                    ),
-                                    cursorBrush = SolidColor(inkColor),
-                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                    decorationBox = { innerTextField ->
-                                        Box(contentAlignment = Alignment.CenterStart) {
-                                            if (searchQuery.isEmpty()) {
-                                                Text(
-                                                    text = stringResource(R.string.search_hint),
-                                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                                        color = secondaryInk.copy(alpha = 0.5f),
-                                                        fontSize = 15.sp
-                                                    )
-                                                )
+                                        BasicTextField(
+                                            value = searchQuery,
+                                            onValueChange = { viewModel.updateSearchQuery(it) },
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .focusRequester(focusRequester)
+                                                .testTag("search_input"),
+                                            singleLine = true,
+                                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                                color = inkColor,
+                                                fontSize = 15.sp
+                                            ),
+                                            cursorBrush = SolidColor(inkColor),
+                                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                            decorationBox = { innerTextField ->
+                                                Box(contentAlignment = Alignment.CenterStart) {
+                                                    if (searchQuery.isEmpty()) {
+                                                        Text(
+                                                            text = stringResource(R.string.search_hint),
+                                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                                color = secondaryInk.copy(alpha = 0.5f),
+                                                                fontSize = 14.sp
+                                                            )
+                                                        )
+                                                    }
+                                                    innerTextField()
+                                                }
                                             }
-                                            innerTextField()
+                                        )
+
+                                        IconButton(
+                                            onClick = {
+                                                if (searchQuery.isNotEmpty()) {
+                                                    viewModel.updateSearchQuery("")
+                                                } else {
+                                                    isSearchActive = false
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .testTag("close_search_button")
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = stringResource(R.string.cancel),
+                                                tint = secondaryInk,
+                                                modifier = Modifier.size(18.dp)
+                                            )
                                         }
                                     }
-                                )
-
-                                IconButton(
-                                    onClick = {
-                                        if (searchQuery.isNotEmpty()) {
-                                            viewModel.updateSearchQuery("")
-                                        } else {
-                                            isSearchActive = false
-                                        }
-                                    },
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .testTag("close_search_button")
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = stringResource(R.string.cancel),
-                                        tint = secondaryInk,
-                                        modifier = Modifier.size(18.dp)
-                                    )
                                 }
                             }
                         }
