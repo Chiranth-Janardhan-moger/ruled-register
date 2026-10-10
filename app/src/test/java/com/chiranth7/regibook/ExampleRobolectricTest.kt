@@ -20,6 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.flow.first
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
@@ -691,6 +692,74 @@ class ExampleRobolectricTest {
     val remaining = dao.getAccountsByName("Chiranth Janardhan Moger")
     assertEquals(1, remaining.size)
     assertEquals(1, remaining[0].srNo)
+  }
+
+  @Test
+  fun `test Kannada strings have no brackets for notified and sum assured`() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val config = Configuration(context.resources.configuration).apply {
+      setLocale(Locale.forLanguageTag("kn"))
+    }
+    val knContext = context.createConfigurationContext(config)
+
+    val sumAssuredKn = knContext.getString(R.string.sum_assured)
+    assertEquals("ವಿಮಾ ಮೊತ್ತ", sumAssuredKn)
+    assertFalse(sumAssuredKn.contains("("))
+    assertFalse(sumAssuredKn.contains(")"))
+
+    val markNotifiedKn = knContext.getString(R.string.mark_as_notified)
+    assertEquals("ಸೂಚಿಸಲಾಗಿದೆ", markNotifiedKn)
+    assertFalse(markNotifiedKn.contains("("))
+    assertFalse(markNotifiedKn.contains(")"))
+  }
+
+  @Test
+  fun `test getDisplayPolicyName strips LICS keyword`() {
+    val accountWithLics = LicAccount(
+      name = "Chiranth Janardhan Moger",
+      policyNumber = "739558210",
+      policyName = "736 - LIC'S JEEVAN LABH PLAN"
+    )
+    assertEquals("736 - JEEVAN LABH PLAN", accountWithLics.getDisplayPolicyName(SettingsManager.LANG_ENGLISH))
+    assertFalse(accountWithLics.getDisplayPolicyName(SettingsManager.LANG_ENGLISH).contains("LIC"))
+
+    val accountClean = LicAccount(
+      name = "Chiranth Janardhan Moger",
+      policyNumber = "739558210",
+      policyName = "736 - JEEVAN LABH PLAN"
+    )
+    assertEquals("736 - JEEVAN LABH PLAN", accountClean.getDisplayPolicyName(SettingsManager.LANG_ENGLISH))
+  }
+
+  @Test
+  fun `test pigmi search filters by numeric serial numbers`() = kotlinx.coroutines.runBlocking {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val db = com.chiranth7.regibook.data.AppDatabase.getDatabase(context)
+    val dao = db.pigmiDao()
+
+    dao.insertAccount(
+      com.chiranth7.regibook.features.pigmi.data.PigmiAccount(
+        srNo = 7,
+        name = "Pratham Subray Bhat",
+        kannadaName = "ಪ್ರಥಮ್ ಸುಬ್ರಾಯ ಭಟ್"
+      )
+    )
+
+    dao.insertAccount(
+      com.chiranth7.regibook.features.pigmi.data.PigmiAccount(
+        srNo = 11,
+        name = "Manjunath Nagappa Gond",
+        kannadaName = "ಮಂಜುನಾಥ್ ನಾಗಪ್ಪ ಗೌಡ"
+      )
+    )
+
+    // Searching "7" should match srNo 7
+    val result7 = dao.searchAccounts("7").first()
+    assertTrue(result7.any { it.srNo == 7 })
+
+    // Searching "11" should match srNo 11
+    val result11 = dao.searchAccounts("11").first()
+    assertTrue(result11.any { it.srNo == 11 })
   }
 }
 

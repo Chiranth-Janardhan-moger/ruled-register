@@ -81,25 +81,15 @@ fun RegisterDrawerContent(
                     modifier = Modifier.size(28.dp)
                 )
                 Spacer(modifier = Modifier.width(14.dp))
-                Column {
-                    Text(
-                        text = stringResource(R.string.register_books),
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        ),
-                        color = inkColor
-                    )
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = FontFamily.Serif,
-                            fontSize = 12.sp
-                        ),
-                        color = secondaryInk
-                    )
-                }
+                Text(
+                    text = stringResource(R.string.register_books),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    ),
+                    color = inkColor
+                )
             }
 
             // Divider under header

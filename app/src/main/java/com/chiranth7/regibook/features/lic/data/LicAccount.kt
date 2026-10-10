@@ -36,4 +36,18 @@ data class LicAccount(
             name
         }
     }
+
+    fun getDisplayPolicyName(currentLanguage: String): String {
+        // Strip "LIC'S", "LICS", or "LIC" from policy names (e.g., "736 - LIC'S JEEVAN LABH PLAN" -> "736 - JEEVAN LABH PLAN")
+        val cleaned = policyName
+            .replace(Regex("(?i)\\bLIC'?S\\s*"), "")
+            .replace(Regex("\\s+-\\s+"), " - ")
+            .trim()
+
+        return if (currentLanguage == com.chiranth7.regibook.util.SettingsManager.LANG_KANNADA) {
+            com.chiranth7.regibook.util.KannadaNameHelper.formatDisplayName(cleaned, currentLanguage)
+        } else {
+            cleaned
+        }
+    }
 }

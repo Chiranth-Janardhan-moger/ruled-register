@@ -1,8 +1,11 @@
 package com.chiranth7.regibook.features.pigmi.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -23,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontFamily
@@ -30,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
@@ -59,13 +64,32 @@ fun NumericFastScrollSidebar(
     var isDragging by remember { mutableStateOf(false) }
     var activeNumber by remember { mutableStateOf<Int?>(null) }
     var columnHeight by remember { mutableFloatStateOf(1f) }
+    val animatedTouchY = remember { androidx.compose.animation.core.Animatable(0f) }
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
 
-    fun handlePosition(y: Float) {
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+
+    fun handlePosition(y: Float, isRelease: Boolean = false) {
         if (columnHeight <= 0f) return
-        val fraction = (y / columnHeight).coerceIn(0f, 1f)
-        val targetNumber = (1 + fraction * (maxSrNo - 1)).roundToInt()
-        activeNumber = targetNumber
-        onScrollToSrNo(targetNumber)
+        val clampedY = y.coerceIn(0f, columnHeight)
+        coroutineScope.launch {
+            animatedTouchY.animateTo(
+                targetValue = clampedY,
+                animationSpec = androidx.compose.animation.core.spring(
+                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                )
+            )
+        }
+        val fraction = (clampedY / columnHeight).coerceIn(0f, 1f)
+        val targetNumber = (1 + fraction * (maxSrNo - 1)).roundToInt().coerceIn(1, maxSrNo)
+        if (activeNumber != targetNumber) {
+            activeNumber = targetNumber
+            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+        }
+        if (isRelease) {
+            onScrollToSrNo(targetNumber)
+        }
     }
 
     Box(
@@ -74,29 +98,50 @@ fun NumericFastScrollSidebar(
             .padding(vertical = 12.dp, horizontal = 2.dp),
         contentAlignment = Alignment.CenterEnd
     ) {
-        // Floating preview bubble showing selected Sr No when dragging/touching
+        // Floating preview bubble showing plain selected number (OriginOS Spring Wave)
         AnimatedVisibility(
             visible = isDragging && activeNumber != null,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.padding(end = 44.dp)
+            enter = fadeIn(animationSpec = androidx.compose.animation.core.tween(120)) +
+                    androidx.compose.animation.scaleIn(
+                        initialScale = 0.65f,
+                        animationSpec = androidx.compose.animation.core.spring(
+                            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                        )
+                    ),
+            exit = fadeOut(animationSpec = androidx.compose.animation.core.tween(150)) +
+                    androidx.compose.animation.scaleOut(
+                        targetScale = 0.7f,
+                        animationSpec = androidx.compose.animation.core.tween(150)
+                    ),
+            modifier = Modifier
+                .padding(end = 48.dp)
+                .graphicsLayer {
+                    // Smooth OriginOS spring tracking vertically alongside finger
+                    val bubbleOffset = animatedTouchY.value - (columnHeight / 2f)
+                    translationY = bubbleOffset.coerceIn(-columnHeight / 2.2f, columnHeight / 2.2f)
+                }
         ) {
             Surface(
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.primary,
-                tonalElevation = 6.dp,
-                shadowElevation = 6.dp
+                tonalElevation = 8.dp,
+                shadowElevation = 8.dp
             ) {
-                Text(
-                    text = "Sr #${activeNumber ?: 1}",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontSize = 16.sp
-                    ),
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                )
+                Box(
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "${activeNumber ?: 1}",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontSize = 20.sp
+                        )
+                    )
+                }
             }
         }
 
@@ -117,7 +162,10 @@ fun NumericFastScrollSidebar(
                         onPress = { offset ->
                             isDragging = true
                             handlePosition(offset.y)
-                            tryAwaitRelease()
+                            val released = tryAwaitRelease()
+                            if (released) {
+                                handlePosition(offset.y, isRelease = true)
+                            }
                             isDragging = false
                             activeNumber = null
                         }
@@ -130,6 +178,8 @@ fun NumericFastScrollSidebar(
                             handlePosition(offset.y)
                         },
                         onDragEnd = {
+                            val finalY = animatedTouchY.targetValue
+                            handlePosition(finalY, isRelease = true)
                             isDragging = false
                             activeNumber = null
                         },

@@ -1,6 +1,7 @@
 package com.chiranth7.regibook.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -101,18 +102,19 @@ fun UpdateDialog(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.End
                         ) {
                             OutlinedButton(
                                 onClick = onDismiss,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(0.4f)
                             ) {
                                 Text("Later", fontFamily = FontFamily.Serif)
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Button(
                                 onClick = { onConfirmUpdate(info) },
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.weight(0.6f),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.primary
                                 )

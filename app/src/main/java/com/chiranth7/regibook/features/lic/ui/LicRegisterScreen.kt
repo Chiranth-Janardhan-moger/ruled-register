@@ -268,15 +268,7 @@ fun LicRegisterScreen(
                                     onClick = {
                                         viewModel.selectAccount(account.id)
                                         onNavigateToDetails(account.id)
-                                    },
-                                    onCall = if (account.phoneNumber.isNotEmpty()) {
-                                        {
-                                            val intent = Intent(Intent.ACTION_DIAL).apply {
-                                                data = Uri.parse("tel:${account.phoneNumber.trim()}")
-                                            }
-                                            context.startActivity(intent)
-                                        }
-                                    } else null
+                                    }
                                 )
                             }
                         }
@@ -321,7 +313,6 @@ private fun LicPolicyCard(
     account: LicAccount,
     currentLanguage: String = SettingsManager.LANG_ENGLISH,
     onClick: () -> Unit,
-    onCall: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -345,7 +336,7 @@ private fun LicPolicyCard(
             .testTag("lic_card_${account.id}")
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Top Row: Name and Call action
+            // Top Row: Name and Premium Amount
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -363,61 +354,62 @@ private fun LicPolicyCard(
                     modifier = Modifier.weight(1f)
                 )
 
-                if (onCall != null) {
-                    IconButton(
-                        onClick = onCall,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .testTag("call_policy_${account.id}")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Call,
-                            contentDescription = stringResource(R.string.call),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                if (account.premiumAmount.isNotBlank()) {
+                    Text(
+                        text = account.premiumAmount,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Serif,
+                            fontSize = 18.sp
+                        ),
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Policy Number
-            Surface(
-                shape = RoundedCornerShape(6.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant
+            // Policy Number Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = 8.dp, end = 2.dp, top = 2.dp, bottom = 2.dp)
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
-                    Text(
-                        text = (if (currentLanguage == SettingsManager.LANG_KANNADA) "ಪಾಲಿಸಿ: " else "No: ") + account.policyNumber,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 12.sp
-                        ),
-                        color = inkColor
-                    )
-                    Spacer(modifier = Modifier.width(2.dp))
-                    IconButton(
-                        onClick = {
-                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            val clip = ClipData.newPlainText("Policy Number", account.policyNumber)
-                            clipboard.setPrimaryClip(clip)
-                            Toast.makeText(context, context.getString(R.string.policy_number_copied), Toast.LENGTH_SHORT).show()
-                        },
-                        modifier = Modifier
-                            .size(24.dp)
-                            .testTag("copy_policy_no_${account.id}")
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(start = 8.dp, end = 2.dp, top = 2.dp, bottom = 2.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.ContentCopy,
-                            contentDescription = stringResource(R.string.copy),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(13.dp)
+                        Text(
+                            text = (if (currentLanguage == SettingsManager.LANG_KANNADA) "ಪಾಲಿಸಿ: " else "No: ") + account.policyNumber,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 12.sp
+                            ),
+                            color = inkColor
                         )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        IconButton(
+                            onClick = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = ClipData.newPlainText("Policy Number", account.policyNumber)
+                                clipboard.setPrimaryClip(clip)
+                                Toast.makeText(context, context.getString(R.string.policy_number_copied), Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier
+                                .size(24.dp)
+                                .testTag("copy_policy_no_${account.id}")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = stringResource(R.string.copy),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(13.dp)
+                            )
+                        }
                     }
                 }
             }

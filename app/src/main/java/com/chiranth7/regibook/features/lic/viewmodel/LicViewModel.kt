@@ -102,23 +102,24 @@ class LicViewModel(
                     LicAccount(
                         name = "Chiranth Janardhan Moger",
                         policyNumber = "739558210",
-                        policyName = "736 - LIC'S JEEVAN LABH PLAN",
+                        policyName = "736 - JEEVAN LABH PLAN",
                         totalYears = "21/15",
                         lastPaymentDate = "29/06/2025",
                         nextPaymentDate = "28/06/2026",
                         premiumAmount = "₹11,873/Year",
                         address = "₹2,00,000",
-                        phoneNumber = "",
+                        phoneNumber = "9071911793",
                         commencementDate = "28/06/2025",
                         lastPremiumDate = "28/06/2040",
                         maturityDate = "28/06/2046",
                         kannadaName = "ಚಿರಂತ ಜನಾರ್ದನ ಮೊಗೇರ"
                     )
                 )
-            } else if (existing.commencementDate.isBlank() || existing.lastPremiumDate.isBlank() || existing.maturityDate.isBlank() || existing.address != "₹2,00,000" || existing.kannadaName.isBlank()) {
+            } else if (existing.commencementDate.isBlank() || existing.lastPremiumDate.isBlank() || existing.maturityDate.isBlank() || existing.address != "₹2,00,000" || existing.kannadaName.isBlank() || existing.phoneNumber.isBlank()) {
                 repository.update(
                     existing.copy(
                         address = "₹2,00,000",
+                        phoneNumber = if (existing.phoneNumber.isBlank()) "9071911793" else existing.phoneNumber,
                         commencementDate = "28/06/2025",
                         lastPremiumDate = "28/06/2040",
                         maturityDate = "28/06/2046",

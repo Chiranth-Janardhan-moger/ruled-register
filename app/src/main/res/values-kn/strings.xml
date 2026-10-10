@@ -73,7 +73,7 @@
     <string name="agent_number_hint">ಏಜೆಂಟ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ</string>
     <string name="tap_to_set_agent_number">ಏಜೆಂಟ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಲು ಒತ್ತಿರಿ</string>
     <string name="copy">ನಕಲಿಸಿ</string>
-    <string name="sum_assured">ವಿಮಾ ಮೊತ್ತ (Sum Assured)</string>
+    <string name="sum_assured">ವಿಮಾ ಮೊತ್ತ</string>
     <string name="policy_number_copied">ಪಾಲಿಸಿ ಸಂಖ್ಯೆಯನ್ನು ನಕಲಿಸಲಾಗಿದೆ</string>
     <string name="notification_channel_lic_name">ಎಲ್.ಐ.ಸಿ ಪಾಲಿಸಿ ಜ್ಞಾಪನೆಗಳು</string>
     <string name="notification_channel_lic_desc">ಮುಂದಿನ ಮತ್ತು ಬಾಕಿ ಇರುವ ಎಲ್.ಐ.ಸಿ ಪಾಲಿಸಿ ಪ್ರೀಮಿಯಂ ಜ್ಞಾಪನೆಗಳು</string>
@@ -95,7 +95,7 @@
     <string name="decrease_text_size">ಅಕ್ಷರದ ಗಾತ್ರ ಕಡಿಮೆ ಮಾಡಿ</string>
     <string name="increase_text_size">ಅಕ್ಷರದ ಗಾತ್ರ ಹೆಚ್ಚಿಸಿ</string>
     <string name="mark_as_paid">ಪಾವತಿಸಲಾಗಿದೆ</string>
-    <string name="mark_as_notified">ಸೂಚಿಸಲಾಗಿದೆ (Notified)</string>
+    <string name="mark_as_notified">ಸೂಚಿಸಲಾಗಿದೆ</string>
     <string name="marked_as_notified">ಗ್ರಾಹಕರಿಗೆ ಸೂಚಿಸಲಾಗಿದೆ ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ</string>
     <string name="unmarked_as_notified">ಜ್ಞಾಪನೆ ಪುನರಾರಂಭಿಸಲಾಗಿದೆ</string>
     <string name="notified">ಸೂಚಿಸಲಾಗಿದೆ</string>

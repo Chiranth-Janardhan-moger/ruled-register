@@ -155,21 +155,14 @@ fun SettingsScreen(
                                 )
                             }
                             Spacer(modifier = Modifier.width(14.dp))
-                            Column {
-                                Text(
-                                    text = "Pigmi Register",
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontFamily = FontFamily.Serif,
-                                        fontWeight = FontWeight.SemiBold
-                                    ),
-                                    color = inkColor
-                                )
-                                Text(
-                                    text = "Daily collection account",
-                                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Serif),
-                                    color = secondaryInk
-                                )
-                            }
+                            Text(
+                                text = "Pigmi Register",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontFamily = FontFamily.Serif,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = inkColor
+                            )
                         }
                     }
 
@@ -204,21 +197,14 @@ fun SettingsScreen(
                                 )
                             }
                             Spacer(modifier = Modifier.width(14.dp))
-                            Column {
-                                Text(
-                                    text = "LIC Policy Card",
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontFamily = FontFamily.Serif,
-                                        fontWeight = FontWeight.SemiBold
-                                    ),
-                                    color = inkColor
-                                )
-                                Text(
-                                    text = "Insurance premium reminder",
-                                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Serif),
-                                    color = secondaryInk
-                                )
-                            }
+                            Text(
+                                text = "LIC Policy Card",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontFamily = FontFamily.Serif,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = inkColor
+                            )
                         }
                     }
 
@@ -333,23 +319,16 @@ fun SettingsScreen(
 
                         Spacer(modifier = Modifier.width(16.dp))
 
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Add New Entry",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontFamily = FontFamily.Serif,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 17.sp
-                                ),
-                                color = inkColor
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Create a new Pigmi or LIC account",
-                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Serif),
-                                color = secondaryInk
-                            )
-                        }
+                        Text(
+                            text = "Add New Entry",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = FontFamily.Serif,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 17.sp
+                            ),
+                            color = inkColor,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
 
@@ -517,17 +496,6 @@ fun SettingsScreen(
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Text(
-                            text = stringResource(R.string.about_description),
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = FontFamily.Serif,
-                                lineHeight = 18.sp
-                            ),
-                            color = secondaryInk
-                        )
 
                         Spacer(modifier = Modifier.height(14.dp))
 

@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Call
@@ -291,8 +291,9 @@ fun LicDetailScreen(
                                             containerColor = Color(0xFF2E7D32)
                                         ),
                                         shape = RoundedCornerShape(10.dp),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
                                         modifier = Modifier
-                                            .weight(1f)
+                                            .weight(0.42f)
                                             .testTag("mark_paid_detail_button")
                                     ) {
                                         Icon(
@@ -300,11 +301,13 @@ fun LicDetailScreen(
                                             contentDescription = null,
                                             modifier = Modifier.size(16.dp)
                                         )
-                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
                                         Text(
                                             text = stringResource(R.string.mark_as_paid),
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 13.sp
+                                            fontSize = 12.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
 
@@ -327,8 +330,9 @@ fun LicDetailScreen(
                                             contentColor = if (isNotified) Color(0xFF616161) else Color(0xFF1565C0)
                                         ),
                                         shape = RoundedCornerShape(10.dp),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
                                         modifier = Modifier
-                                            .weight(1f)
+                                            .weight(0.58f)
                                             .testTag("mark_notified_button")
                                     ) {
                                         Icon(
@@ -336,11 +340,13 @@ fun LicDetailScreen(
                                             contentDescription = null,
                                             modifier = Modifier.size(16.dp)
                                         )
-                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
                                         Text(
                                             text = if (isNotified) stringResource(R.string.notified) else stringResource(R.string.mark_as_notified),
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 13.sp
+                                            fontSize = 12.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
@@ -357,26 +363,25 @@ fun LicDetailScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
-                            // Row 1: Name, Policy Number, and Term (e.g. 25/16) in single row
+                            // Policy Holder Full Name (completely visible, multi-line if needed)
+                            Text(
+                                text = acc.getDisplayName(currentLang),
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontFamily = FontFamily.Serif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp
+                                ),
+                                color = inkColor,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Policy Number & Term (21/15) row below full name
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = acc.getDisplayName(currentLang),
-                                    style = MaterialTheme.typography.titleLarge.copy(
-                                        fontFamily = FontFamily.Serif,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 18.sp
-                                    ),
-                                    color = inkColor,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f, fill = false)
-                                )
-
-                                Spacer(modifier = Modifier.width(8.dp))
-
                                 Surface(
                                     shape = RoundedCornerShape(6.dp),
                                     color = MaterialTheme.colorScheme.surfaceVariant
@@ -417,7 +422,7 @@ fun LicDetailScreen(
                                 }
 
                                 if (acc.totalYears.isNotBlank()) {
-                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Surface(
                                         shape = RoundedCornerShape(6.dp),
                                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
@@ -429,7 +434,7 @@ fun LicDetailScreen(
                                                 fontSize = 12.sp
                                             ),
                                             color = secondaryInk,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                         )
                                     }
                                 }
@@ -444,7 +449,7 @@ fun LicDetailScreen(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
-                                        text = KannadaNameHelper.formatDisplayName(acc.policyName, currentLang),
+                                        text = acc.getDisplayPolicyName(currentLang),
                                         style = MaterialTheme.typography.bodyMedium.copy(
                                             fontWeight = FontWeight.SemiBold,
                                             fontSize = 14.sp
@@ -543,25 +548,6 @@ fun LicDetailScreen(
                                         Icon(
                                             imageVector = Icons.Default.Call,
                                             contentDescription = stringResource(R.string.call),
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(22.dp)
-                                        )
-                                    }
-
-                                    IconButton(
-                                        onClick = {
-                                            val intent = Intent(Intent.ACTION_SENDTO).apply {
-                                                data = Uri.parse("smsto:${acc.phoneNumber.trim()}")
-                                            }
-                                            context.startActivity(intent)
-                                        },
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .testTag("detail_message_button")
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.Message,
-                                            contentDescription = stringResource(R.string.message),
                                             tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(22.dp)
                                         )
