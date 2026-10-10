@@ -176,7 +176,7 @@ class PigmiViewModel(
             _formState.value = current.copy(isSaving = true)
             val editingId = current.editingId
             val finalId: Long
-            if (editingId != null) {
+            val savedAccount = if (editingId != null) {
                 val updated = PigmiAccount(
                     id = editingId,
                     srNo = srNo,
@@ -189,6 +189,7 @@ class PigmiViewModel(
                 )
                 repository.update(updated)
                 finalId = editingId
+                updated
             } else {
                 val newAccount = PigmiAccount(
                     srNo = srNo,
@@ -200,7 +201,9 @@ class PigmiViewModel(
                     kannadaName = kannadaName
                 )
                 finalId = repository.insert(newAccount)
+                newAccount.copy(id = finalId)
             }
+            com.chiranth7.regibook.data.firebase.FirestoreSyncManager.savePigmiToCloud(savedAccount)
             _formState.value = PigmiFormState()
             onSuccess(finalId)
         }
@@ -209,6 +212,7 @@ class PigmiViewModel(
     fun deleteAccount(account: PigmiAccount, onSuccess: () -> Unit) {
         viewModelScope.launch {
             repository.delete(account)
+            com.chiranth7.regibook.data.firebase.FirestoreSyncManager.deletePigmiFromCloud(account.srNo)
             onSuccess()
         }
     }

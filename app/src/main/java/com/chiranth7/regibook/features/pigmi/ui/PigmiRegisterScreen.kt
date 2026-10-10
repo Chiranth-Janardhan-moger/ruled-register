@@ -102,6 +102,8 @@ fun PigmiRegisterScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
 
     LaunchedEffect(Unit) {
+        com.chiranth7.regibook.data.firebase.FirestoreSyncManager.initialSeedIfEmpty(context)
+        com.chiranth7.regibook.data.firebase.FirestoreSyncManager.syncPigmiFromCloud(context)
         com.chiranth7.regibook.features.pigmi.sync.PigmiSyncManager.syncPigmi(context, settingsManager)
     }
 

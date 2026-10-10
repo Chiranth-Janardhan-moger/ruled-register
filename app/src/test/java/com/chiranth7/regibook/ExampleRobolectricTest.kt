@@ -656,25 +656,34 @@ class ExampleRobolectricTest {
     val db = com.chiranth7.regibook.data.AppDatabase.getDatabase(context)
     val dao = db.pigmiDao()
 
+    val testName = "Test Deduplication Customer Unique"
+    val testNameKn = "ಟೆಸ್ಟ್ ಡೆಡುಪ್ಲಿಕೇಶನ್ ಕಸ್ಟಮರ್"
+
+    // Clean up any pre-existing entries with test name
+    val initialMatches = dao.getAccountsByName(testName)
+    for (m in initialMatches) {
+      dao.deleteAccount(m)
+    }
+
     // Insert original account
     val id1 = dao.insertAccount(
       com.chiranth7.regibook.features.pigmi.data.PigmiAccount(
-        srNo = 1,
-        name = "Chiranth Janardhan Moger",
-        kannadaName = "ಚಿರಂತ ಜನಾರ್ದನ ಮೊಗೇರ"
+        srNo = 801,
+        name = testName,
+        kannadaName = testNameKn
       )
     )
 
     // Insert an accidental duplicate with different srNo
     val id2 = dao.insertAccount(
       com.chiranth7.regibook.features.pigmi.data.PigmiAccount(
-        srNo = 100,
-        name = "Chiranth Janardhan Moger",
-        kannadaName = "ಚಿರಂತ ಜನಾರ್ದನ ಮೊಗೇರ"
+        srNo = 802,
+        name = testName,
+        kannadaName = testNameKn
       )
     )
 
-    val matches = dao.getAccountsByName("Chiranth Janardhan Moger")
+    val matches = dao.getAccountsByName(testName)
     assertEquals(2, matches.size)
 
     // Run deduplication simulation
@@ -691,9 +700,9 @@ class ExampleRobolectricTest {
       }
     }
 
-    val remaining = dao.getAccountsByName("Chiranth Janardhan Moger")
+    val remaining = dao.getAccountsByName(testName)
     assertEquals(1, remaining.size)
-    assertEquals(1, remaining[0].srNo)
+    assertEquals(801, remaining[0].srNo)
   }
 
   @Test

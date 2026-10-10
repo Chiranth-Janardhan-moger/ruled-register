@@ -80,6 +80,7 @@ class MainActivity : ComponentActivity() {
             try {
                 com.chiranth7.regibook.data.firebase.FirestoreSyncManager.initialSeedIfEmpty(applicationContext)
                 com.chiranth7.regibook.data.firebase.FirestoreSyncManager.syncPoliciesFromCloud(applicationContext)
+                com.chiranth7.regibook.data.firebase.FirestoreSyncManager.syncPigmiFromCloud(applicationContext)
             } catch (_: Exception) {}
             try {
                 com.chiranth7.regibook.features.pigmi.sync.PigmiSyncManager.syncPigmi(applicationContext, app.settingsManager)
