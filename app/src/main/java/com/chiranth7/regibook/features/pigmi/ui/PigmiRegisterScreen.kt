@@ -141,11 +141,12 @@ fun PigmiRegisterScreen(
         }
         val maxDigits = maxSrNo.toString().length
         val baseMarginWidth = when {
-            maxDigits >= 5 -> 78.dp
-            maxDigits >= 4 -> 66.dp
-            else -> 56.dp
+            maxDigits <= 2 -> 52.dp
+            maxDigits == 3 -> 62.dp
+            maxDigits == 4 -> 76.dp
+            else -> 88.dp
         }
-        val marginWidth = baseMarginWidth * fontScale.coerceIn(1f, 1.45f)
+        val marginWidth = baseMarginWidth * fontScale.coerceIn(1f, 1.5f)
 
         Box(
             modifier = modifier
