@@ -198,7 +198,7 @@ fun AddEditPigmiScreen(
                     },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done
+                        imeAction = ImeAction.Next
                     ),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -210,6 +210,38 @@ fun AddEditPigmiScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("pigmi_name_input")
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = stringResource(R.string.kannada_name),
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    ),
+                    color = secondaryInk
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                OutlinedTextField(
+                    value = formState.kannadaName,
+                    onValueChange = { viewModel.onKannadaNameChanged(it) },
+                    placeholder = { Text(stringResource(R.string.enter_kannada_name)) },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Done
+                    ),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = inkColor,
+                        unfocusedTextColor = inkColor,
+                        focusedBorderColor = inkColor,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("pigmi_kannada_name_input")
                 )
 
                 Spacer(modifier = Modifier.height(28.dp))

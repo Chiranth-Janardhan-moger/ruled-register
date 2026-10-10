@@ -18,6 +18,7 @@ data class PigmiFormState(
     val editingId: Long? = null,
     val srNo: String = "",
     val name: String = "",
+    val kannadaName: String = "",
     val phoneNumber: String = "",
     val address: String = "",
     val accountNumber: String = "",
@@ -71,6 +72,7 @@ class PigmiViewModel(
             editingId = account.id,
             srNo = account.srNo.toString(),
             name = account.name,
+            kannadaName = account.kannadaName,
             phoneNumber = account.phoneNumber,
             address = account.address,
             accountNumber = account.accountNumber,
@@ -91,6 +93,10 @@ class PigmiViewModel(
             name = value,
             nameError = null
         )
+    }
+
+    fun onKannadaNameChanged(value: String) {
+        _formState.value = _formState.value.copy(kannadaName = value)
     }
 
     fun onPhoneNumberChanged(value: String) {
@@ -141,6 +147,7 @@ class PigmiViewModel(
 
         val srNo = parsedSrNo ?: 1
         val name = current.name.trim()
+        val kannadaName = current.kannadaName.trim()
         val phone = current.phoneNumber.trim()
         val address = current.address.trim()
         val accNo = current.accountNumber.trim()
@@ -158,7 +165,8 @@ class PigmiViewModel(
                     phoneNumber = phone,
                     address = address,
                     accountNumber = accNo,
-                    dailyAmount = daily
+                    dailyAmount = daily,
+                    kannadaName = kannadaName
                 )
                 repository.update(updated)
                 finalId = editingId
@@ -169,7 +177,8 @@ class PigmiViewModel(
                     phoneNumber = phone,
                     address = address,
                     accountNumber = accNo,
-                    dailyAmount = daily
+                    dailyAmount = daily,
+                    kannadaName = kannadaName
                 )
                 finalId = repository.insert(newAccount)
             }

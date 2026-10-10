@@ -25,6 +25,8 @@
     <string name="enter_name">Enter name</string>
     <string name="enter_phone">Enter phone number</string>
     <string name="enter_address">Enter address</string>
+    <string name="kannada_name">Name in Kannada</string>
+    <string name="enter_kannada_name">Enter name in Kannada (optional)</string>
     <string name="enter_sr_no">Enter serial number</string>
     <string name="validation_name_required">Please enter a name</string>
     <string name="validation_sr_no_required">Please enter a valid serial number</string>

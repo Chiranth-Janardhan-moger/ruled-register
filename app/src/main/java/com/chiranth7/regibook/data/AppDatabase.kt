@@ -17,7 +17,7 @@ import com.chiranth7.regibook.features.pigmi.data.PigmiDao
         PigmiAccount::class,
         LicAccount::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -57,6 +57,12 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE pigmi_accounts ADD COLUMN kannadaName TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         private fun rebuildPigmiAccountsTable(db: SupportSQLiteDatabase) {
             db.execSQL(
                 "CREATE TABLE IF NOT EXISTS `pigmi_accounts_temp` (" +
@@ -66,26 +72,28 @@ abstract class AppDatabase : RoomDatabase() {
                     "`phoneNumber` TEXT NOT NULL, " +
                     "`address` TEXT NOT NULL, " +
                     "`accountNumber` TEXT NOT NULL, " +
-                    "`dailyAmount` TEXT NOT NULL" +
+                    "`dailyAmount` TEXT NOT NULL, " +
+                    "`kannadaName` TEXT NOT NULL DEFAULT ''" +
                 ")"
             )
 
             try {
                 db.execSQL(
-                    "INSERT INTO `pigmi_accounts_temp` (`id`, `srNo`, `name`, `phoneNumber`, `address`, `accountNumber`, `dailyAmount`) " +
+                    "INSERT INTO `pigmi_accounts_temp` (`id`, `srNo`, `name`, `phoneNumber`, `address`, `accountNumber`, `dailyAmount`, `kannadaName`) " +
                     "SELECT `id`, `srNo`, `name`, " +
                     "COALESCE(`phoneNumber`, ''), " +
                     "COALESCE(`address`, ''), " +
                     "COALESCE(`accountNumber`, ''), " +
-                    "COALESCE(`dailyAmount`, '') " +
+                    "COALESCE(`dailyAmount`, ''), " +
+                    "'' " +
                     "FROM `pigmi_accounts`"
                 )
             } catch (e: Exception) {
                 Log.w("AppDatabase", "Fallback copy for pigmi_accounts migration", e)
                 try {
                     db.execSQL(
-                        "INSERT INTO `pigmi_accounts_temp` (`id`, `srNo`, `name`, `phoneNumber`, `address`, `accountNumber`, `dailyAmount`) " +
-                        "SELECT `id`, `srNo`, `name`, '', '', '', '' FROM `pigmi_accounts`"
+                        "INSERT INTO `pigmi_accounts_temp` (`id`, `srNo`, `name`, `phoneNumber`, `address`, `accountNumber`, `dailyAmount`, `kannadaName`) " +
+                        "SELECT `id`, `srNo`, `name`, '', '', '', '', '' FROM `pigmi_accounts`"
                     )
                 } catch (_: Exception) {}
             }
@@ -102,7 +110,7 @@ abstract class AppDatabase : RoomDatabase() {
                 AppDatabase::class.java,
                 "register_book_database"
             )
-                .addMigrations(MIGRATION_8_9, MIGRATION_9_10, MIGRATION_8_10, MIGRATION_10_11)
+                .addMigrations(MIGRATION_8_9, MIGRATION_9_10, MIGRATION_8_10, MIGRATION_10_11, MIGRATION_11_12)
                 .fallbackToDestructiveMigration(true)
                 .fallbackToDestructiveMigrationOnDowngrade(true)
                 .build()

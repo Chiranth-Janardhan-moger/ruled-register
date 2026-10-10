@@ -78,6 +78,9 @@ class MainActivity : ComponentActivity() {
         // Automatic default cloud sync in background
         lifecycleScope.launch(Dispatchers.IO) {
             try {
+                com.chiranth7.regibook.features.pigmi.sync.PigmiSyncManager.syncPigmi(applicationContext, app.settingsManager)
+            } catch (_: Exception) {}
+            try {
                 com.chiranth7.regibook.features.lic.sync.LicSyncManager.syncPolicies(applicationContext, app.settingsManager)
             } catch (_: Exception) {}
         }

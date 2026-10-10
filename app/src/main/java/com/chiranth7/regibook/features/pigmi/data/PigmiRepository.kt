@@ -13,6 +13,8 @@ class PigmiRepository(private val dao: PigmiDao) {
 
     suspend fun delete(account: PigmiAccount) = dao.deleteAccount(account)
 
+    suspend fun getAccountBySrNo(srNo: Int): PigmiAccount? = dao.getAccountBySrNo(srNo)
+
     suspend fun getNextSrNo(): Int {
         val max = dao.getMaxSrNo() ?: 0
         return max + 1

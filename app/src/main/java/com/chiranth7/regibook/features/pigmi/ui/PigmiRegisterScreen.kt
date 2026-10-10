@@ -99,6 +99,11 @@ fun PigmiRegisterScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    LaunchedEffect(Unit) {
+        com.chiranth7.regibook.features.pigmi.sync.PigmiSyncManager.syncPigmi(context, settingsManager)
+    }
 
     val inkColor = MaterialTheme.colorScheme.onBackground
     val secondaryInk = MaterialTheme.colorScheme.onSurfaceVariant
@@ -439,7 +444,7 @@ private fun PigmiRow(
 
             // Name
             Text(
-                text = KannadaNameHelper.formatDisplayName(account.name, currentLanguage),
+                text = account.getDisplayName(currentLanguage),
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = FontFamily.Serif,
                     fontWeight = FontWeight.Normal,

@@ -530,10 +530,13 @@ class ExampleRobolectricTest {
       phoneNumber = "+91 9800000000",
       address = "Bengaluru",
       accountNumber = "PG-1100",
-      dailyAmount = "₹200"
+      dailyAmount = "₹200",
+      kannadaName = "ಚಿರಂತ"
     )
     assertEquals("1100", account.srNo.toString())
     assertEquals(4, account.srNo.toString().length)
+    assertEquals("Chiranth", account.getDisplayName(SettingsManager.LANG_ENGLISH))
+    assertEquals("ಚಿರಂತ", account.getDisplayName(SettingsManager.LANG_KANNADA))
   }
 
   @Test

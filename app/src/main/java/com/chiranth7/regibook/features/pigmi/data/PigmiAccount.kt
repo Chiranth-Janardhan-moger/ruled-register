@@ -19,5 +19,14 @@ data class PigmiAccount(
     val phoneNumber: String = "",
     val address: String = "",
     val accountNumber: String = "",
-    val dailyAmount: String = ""
-)
+    val dailyAmount: String = "",
+    val kannadaName: String = ""
+) {
+    fun getDisplayName(currentLanguage: String): String {
+        return if (currentLanguage == com.chiranth7.regibook.util.SettingsManager.LANG_KANNADA) {
+            if (kannadaName.isNotBlank()) kannadaName else com.chiranth7.regibook.util.KannadaNameHelper.formatDisplayName(name, currentLanguage)
+        } else {
+            name
+        }
+    }
+}

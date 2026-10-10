@@ -26,6 +26,8 @@
     <string name="enter_name">ಹೆಸರು ನಮೂದಿಸಿ</string>
     <string name="enter_phone">ದೂರವಾಣಿ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ</string>
     <string name="enter_address">ವಿಳಾಸ ನಮೂದಿಸಿ</string>
+    <string name="kannada_name">ಕನ್ನಡದಲ್ಲಿ ಹೆಸರು</string>
+    <string name="enter_kannada_name">ಕನ್ನಡದಲ್ಲಿ ಹೆಸರು ನಮೂದಿಸಿ (ಐಚ್ಛಿಕ)</string>
     <string name="enter_sr_no">ಕ್ರಮ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ</string>
     <string name="validation_name_required">ದಯವಿಟ್ಟು ಹೆಸರನ್ನು ನಮೂದಿಸಿ</string>
     <string name="validation_sr_no_required">ದಯವಿಟ್ಟು ಮಾನ್ಯ ಕ್ರಮ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ</string>
