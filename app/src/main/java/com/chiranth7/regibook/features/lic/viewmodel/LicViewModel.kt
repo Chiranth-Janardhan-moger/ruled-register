@@ -325,6 +325,7 @@ class LicViewModel(
                     premiumAmount = premium
                 )
                 repository.update(updated)
+                com.chiranth7.regibook.data.firebase.FirestoreSyncManager.savePolicyToCloud(updated)
                 finalId = editingId
             } else {
                 val newAccount = LicAccount(
@@ -339,6 +340,7 @@ class LicViewModel(
                     premiumAmount = premium
                 )
                 finalId = repository.insert(newAccount)
+                com.chiranth7.regibook.data.firebase.FirestoreSyncManager.savePolicyToCloud(newAccount.copy(id = finalId))
             }
             _formState.value = LicFormState()
             _selectedAccountId.value = finalId
@@ -349,6 +351,7 @@ class LicViewModel(
     fun deleteAccount(account: LicAccount, onSuccess: () -> Unit) {
         viewModelScope.launch {
             repository.delete(account)
+            com.chiranth7.regibook.data.firebase.FirestoreSyncManager.deletePolicyFromCloud(account.policyNumber)
             if (_selectedAccountId.value == account.id) {
                 _selectedAccountId.value = null
             }
@@ -368,6 +371,7 @@ class LicViewModel(
                 lastPaymentDate = newLastPaymentDate
             )
             repository.update(updated)
+            com.chiranth7.regibook.data.firebase.FirestoreSyncManager.savePolicyToCloud(updated)
             onSuccess?.invoke()
         }
     }

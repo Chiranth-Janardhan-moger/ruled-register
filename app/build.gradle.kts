@@ -5,6 +5,7 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.google.devtools.ksp)
   alias(libs.plugins.secrets)
+  alias(libs.plugins.google.services)
 }
 
 val localProperties = Properties().apply {
@@ -25,8 +26,8 @@ android {
     applicationId = "com.chiranth7.regibook"
     minSdk = 24
     targetSdk = 36
-    versionCode = 19
-    versionName = "1.0.18"
+    versionCode = 20
+    versionName = "1.0.19"
 
     buildConfigField("String", "DISCORD_WEBHOOK_URL", "\"$discordWebhookUrl\"")
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -99,6 +100,10 @@ dependencies {
   implementation(libs.androidx.work.runtime.ktx)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.core)
+
+  // Firebase Firestore
+  implementation(platform(libs.firebase.bom))
+  implementation(libs.firebase.firestore)
 
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.junit)
