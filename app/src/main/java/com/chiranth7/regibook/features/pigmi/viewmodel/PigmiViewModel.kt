@@ -32,6 +32,25 @@ class PigmiViewModel(
     private val repository: PigmiRepository
 ) : ViewModel() {
 
+    init {
+        viewModelScope.launch {
+            // Deduplicate accounts on launch: remove duplicate entries sharing the same name
+            val allAccounts = repository.getAllAccountsSnapshot()
+            val seenNames = mutableSetOf<String>()
+            for (acc in allAccounts) {
+                val normalizedName = acc.name.trim().lowercase()
+                if (normalizedName.isNotBlank()) {
+                    if (seenNames.contains(normalizedName)) {
+                        // Duplicate found - prune it
+                        repository.delete(acc)
+                    } else {
+                        seenNames.add(normalizedName)
+                    }
+                }
+            }
+        }
+    }
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 

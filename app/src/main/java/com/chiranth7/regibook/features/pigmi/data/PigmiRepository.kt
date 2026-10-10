@@ -15,6 +15,10 @@ class PigmiRepository(private val dao: PigmiDao) {
 
     suspend fun getAccountBySrNo(srNo: Int): PigmiAccount? = dao.getAccountBySrNo(srNo)
 
+    suspend fun getAccountsByName(name: String): List<PigmiAccount> = dao.getAccountsByName(name)
+
+    suspend fun getAllAccountsSnapshot(): List<PigmiAccount> = dao.getAllAccountsSnapshot()
+
     suspend fun getNextSrNo(): Int {
         val max = dao.getMaxSrNo() ?: 0
         return max + 1

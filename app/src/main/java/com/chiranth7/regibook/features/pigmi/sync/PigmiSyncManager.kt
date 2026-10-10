@@ -59,13 +59,32 @@ object PigmiSyncManager {
             for (incoming in accounts) {
                 if (incoming.srNo <= 0) continue
 
-                val existing = pigmiDao.getAccountBySrNo(incoming.srNo)
-                if (existing != null) {
-                    val updated = existing.copy(
-                        name = incoming.name.ifBlank { existing.name },
-                        kannadaName = incoming.kannadaName.ifBlank { existing.kannadaName }
+                // Check for duplicate accounts by same name (case-insensitive)
+                val sameNameMatches = if (incoming.name.isNotBlank()) {
+                    pigmiDao.getAccountsByName(incoming.name)
+                } else {
+                    emptyList()
+                }
+
+                val existingBySrNo = pigmiDao.getAccountBySrNo(incoming.srNo)
+
+                // The canonical account to update (prioritizing matching srNo, then matching name)
+                val target = existingBySrNo ?: sameNameMatches.firstOrNull()
+
+                if (target != null) {
+                    val updated = target.copy(
+                        srNo = incoming.srNo,
+                        name = incoming.name.ifBlank { target.name },
+                        kannadaName = incoming.kannadaName.ifBlank { target.kannadaName }
                     )
                     pigmiDao.updateAccount(updated)
+
+                    // Prune any redundant duplicate records sharing the same name
+                    for (duplicate in sameNameMatches) {
+                        if (duplicate.id != target.id) {
+                            pigmiDao.deleteAccount(duplicate)
+                        }
+                    }
                 } else {
                     pigmiDao.insertAccount(incoming)
                 }

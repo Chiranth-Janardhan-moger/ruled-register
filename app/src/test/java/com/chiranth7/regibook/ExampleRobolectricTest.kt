@@ -646,6 +646,52 @@ class ExampleRobolectricTest {
     assertTrue(knStr.contains("ತಿಂಗಳು"))
     assertTrue(knStr.contains("29"))
   }
+
+  @Test
+  fun `test pigmi deduplication prunes duplicate entries with same name`() = kotlinx.coroutines.runBlocking {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val db = com.chiranth7.regibook.data.AppDatabase.getDatabase(context)
+    val dao = db.pigmiDao()
+
+    // Insert original account
+    val id1 = dao.insertAccount(
+      com.chiranth7.regibook.features.pigmi.data.PigmiAccount(
+        srNo = 1,
+        name = "Chiranth Janardhan Moger",
+        kannadaName = "ಚಿರಂತ ಜನಾರ್ದನ ಮೊಗೇರ"
+      )
+    )
+
+    // Insert an accidental duplicate with different srNo
+    val id2 = dao.insertAccount(
+      com.chiranth7.regibook.features.pigmi.data.PigmiAccount(
+        srNo = 100,
+        name = "Chiranth Janardhan Moger",
+        kannadaName = "ಚಿರಂತ ಜನಾರ್ದನ ಮೊಗೇರ"
+      )
+    )
+
+    val matches = dao.getAccountsByName("Chiranth Janardhan Moger")
+    assertEquals(2, matches.size)
+
+    // Run deduplication simulation
+    val allAccounts = dao.getAllAccountsSnapshot()
+    val seenNames = mutableSetOf<String>()
+    for (acc in allAccounts) {
+      val normalized = acc.name.trim().lowercase()
+      if (normalized.isNotBlank()) {
+        if (seenNames.contains(normalized)) {
+          dao.deleteAccount(acc)
+        } else {
+          seenNames.add(normalized)
+        }
+      }
+    }
+
+    val remaining = dao.getAccountsByName("Chiranth Janardhan Moger")
+    assertEquals(1, remaining.size)
+    assertEquals(1, remaining[0].srNo)
+  }
 }
 
 

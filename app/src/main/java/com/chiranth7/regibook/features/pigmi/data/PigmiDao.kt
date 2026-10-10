@@ -19,6 +19,12 @@ interface PigmiDao {
     @Query("SELECT * FROM pigmi_accounts WHERE srNo = :srNo LIMIT 1")
     suspend fun getAccountBySrNo(srNo: Int): PigmiAccount?
 
+    @Query("SELECT * FROM pigmi_accounts WHERE LOWER(TRIM(name)) = LOWER(TRIM(:name))")
+    suspend fun getAccountsByName(name: String): List<PigmiAccount>
+
+    @Query("SELECT * FROM pigmi_accounts ORDER BY srNo ASC, id ASC")
+    suspend fun getAllAccountsSnapshot(): List<PigmiAccount>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAccount(account: PigmiAccount): Long
 
