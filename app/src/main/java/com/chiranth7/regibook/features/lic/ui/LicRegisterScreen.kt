@@ -336,7 +336,7 @@ private fun LicPolicyCard(
             .testTag("lic_card_${account.id}")
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Top Row: Name and Premium Amount
+            // Top Row: Name
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -351,20 +351,8 @@ private fun LicPolicyCard(
                     color = inkColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.fillMaxWidth()
                 )
-
-                if (account.premiumAmount.isNotBlank()) {
-                    Text(
-                        text = account.premiumAmount,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Serif,
-                            fontSize = 18.sp
-                        ),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))

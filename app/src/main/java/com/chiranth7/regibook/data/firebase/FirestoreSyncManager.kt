@@ -20,67 +20,26 @@ object FirestoreSyncManager {
     }
 
     /**
-     * Seeds initial local policies and pigmi accounts from bundled assets into Room
-     * and uploads them to Firestore if Firestore is empty.
+     * Seeds and synchronizes policies and pigmi accounts directly with Firestore.
      */
     suspend fun initialSeedIfEmpty(context: Context) = withContext(Dispatchers.IO) {
         val database = AppDatabase.getDatabase(context)
         val licDao = database.licDao()
         val pigmiDao = database.pigmiDao()
 
-        // 1. Seed LIC policies into Room if Room has 0 or only 1 policy
-        try {
-            if (licDao.getAccountCount() <= 1) {
-                val assetJson = context.assets.open("policies-sync.json").bufferedReader().use { it.readText() }
-                val accounts = parsePoliciesJson(assetJson)
-                for (acc in accounts) {
-                    if (acc.policyNumber.isNotBlank()) {
-                        val existing = licDao.getAccountByPolicyNumber(acc.policyNumber)
-                        if (existing == null) {
-                            licDao.insertAccount(acc)
-                        } else {
-                            licDao.updateAccount(existing.copy(
-                                name = acc.name.ifBlank { existing.name },
-                                kannadaName = acc.kannadaName.ifBlank { existing.kannadaName },
-                                policyName = acc.policyName.ifBlank { existing.policyName },
-                                totalYears = acc.totalYears.ifBlank { existing.totalYears },
-                                phoneNumber = acc.phoneNumber.ifBlank { existing.phoneNumber },
-                                lastPaymentDate = acc.lastPaymentDate.ifBlank { existing.lastPaymentDate },
-                                nextPaymentDate = acc.nextPaymentDate.ifBlank { existing.nextPaymentDate },
-                                premiumAmount = acc.premiumAmount.ifBlank { existing.premiumAmount },
-                                address = acc.address.ifBlank { existing.address },
-                                commencementDate = acc.commencementDate.ifBlank { existing.commencementDate },
-                                lastPremiumDate = acc.lastPremiumDate.ifBlank { existing.lastPremiumDate },
-                                maturityDate = acc.maturityDate.ifBlank { existing.maturityDate }
-                            ))
-                        }
-                    }
-                }
-            }
-        } catch (_: Exception) {}
+        // If local database is empty, pull directly from Firestore
+        if (licDao.getAccountCount() == 0) {
+            syncPoliciesFromCloud(context)
+        }
+        if (pigmiDao.getAllAccountsSnapshot().isEmpty()) {
+            syncPigmiFromCloud(context)
+        }
 
-        // 2. Seed Pigmi accounts into Room if empty
-        try {
-            if (pigmiDao.getAllAccountsSnapshot().isEmpty()) {
-                val assetJson = context.assets.open("pigmi-sync.json").bufferedReader().use { it.readText() }
-                val pigmiAccounts = parsePigmiJson(assetJson)
-                for (acc in pigmiAccounts) {
-                    if (acc.srNo > 0) {
-                        val existing = pigmiDao.getAccountBySrNo(acc.srNo)
-                        if (existing == null) {
-                            pigmiDao.insertAccount(acc)
-                        }
-                    }
-                }
-            }
-        } catch (_: Exception) {}
-
-        // 3. Upload to Firestore if Firestore collections are empty
+        // If Firestore was somehow empty, upload local accounts
         try {
             val snapshot = firestore.collection(COLLECTION_POLICIES).limit(1).get().await()
             if (snapshot.isEmpty) {
-                val localPolicies = licDao.getAllAccountsList()
-                for (account in localPolicies) {
+                for (account in licDao.getAllAccountsList()) {
                     if (account.policyNumber.isNotBlank()) {
                         savePolicyToCloud(account)
                     }
@@ -91,8 +50,7 @@ object FirestoreSyncManager {
         try {
             val pigmiSnapshot = firestore.collection(COLLECTION_PIGMI).limit(1).get().await()
             if (pigmiSnapshot.isEmpty) {
-                val localPigmi = pigmiDao.getAllAccountsSnapshot()
-                for (account in localPigmi) {
+                for (account in pigmiDao.getAllAccountsSnapshot()) {
                     savePigmiToCloud(account)
                 }
             }
@@ -245,105 +203,5 @@ object FirestoreSyncManager {
         } catch (_: Exception) {
             0
         }
-    }
-
-    private fun parsePoliciesJson(jsonString: String): List<LicAccount> {
-        val trimmed = jsonString.trim()
-        val jsonArray = when {
-            trimmed.startsWith("[") -> org.json.JSONArray(trimmed)
-            trimmed.startsWith("{") -> {
-                val obj = org.json.JSONObject(trimmed)
-                when {
-                    obj.has("policies") -> obj.getJSONArray("policies")
-                    obj.has("accounts") -> obj.getJSONArray("accounts")
-                    obj.has("data") -> obj.getJSONArray("data")
-                    else -> org.json.JSONArray()
-                }
-            }
-            else -> return emptyList()
-        }
-
-        val list = mutableListOf<LicAccount>()
-        for (i in 0 until jsonArray.length()) {
-            val item = jsonArray.optJSONObject(i) ?: continue
-
-            val policyNumber = item.optString("policyNumber", item.optString("policy_number", "")).trim()
-            val name = item.optString("name", item.optString("customerName", item.optString("customer_name", ""))).trim()
-            if (policyNumber.isBlank() && name.isBlank()) continue
-
-            val policyName = item.optString("policyName", item.optString("policy_name", item.optString("plan", ""))).trim()
-            val totalYears = item.optString("totalYears", item.optString("total_years", item.optString("termPpt", item.optString("term_ppt", "")))).trim()
-            val phoneNumber = item.optString("phoneNumber", item.optString("phone_number", item.optString("phone", ""))).trim()
-            val lastPaymentDate = item.optString("lastPaymentDate", item.optString("last_payment_date", item.optString("last_paid", ""))).trim()
-            val nextPaymentDate = item.optString("nextPaymentDate", item.optString("next_payment_date", item.optString("next_due_date", item.optString("fup", "")))).trim()
-            val premiumAmount = item.optString("premiumAmount", item.optString("premium_amount", item.optString("premium", ""))).trim()
-            val sumAssured = item.optString("sumAssured", item.optString("sum_assured", item.optString("address", ""))).trim()
-            val commencementDate = item.optString("commencementDate", item.optString("commencement_date", "")).trim()
-            val lastPremiumDate = item.optString("lastPremiumDate", item.optString("last_premium_date", item.optString("endOfPpt", item.optString("end_of_ppt", "")))).trim()
-            val maturityDate = item.optString("maturityDate", item.optString("maturity_date", "")).trim()
-            val kannadaName = item.optString("kannadaName", item.optString("kannada_name", item.optString("nameKn", ""))).trim()
-
-            list.add(
-                LicAccount(
-                    id = 0L,
-                    name = name,
-                    policyNumber = policyNumber,
-                    policyName = policyName,
-                    totalYears = totalYears,
-                    phoneNumber = phoneNumber,
-                    lastPaymentDate = lastPaymentDate,
-                    nextPaymentDate = nextPaymentDate,
-                    premiumAmount = premiumAmount,
-                    address = sumAssured,
-                    commencementDate = commencementDate,
-                    lastPremiumDate = lastPremiumDate,
-                    maturityDate = maturityDate,
-                    kannadaName = kannadaName
-                )
-            )
-        }
-        return list
-    }
-
-    private fun parsePigmiJson(jsonString: String): List<PigmiAccount> {
-        val trimmed = jsonString.trim()
-        val jsonArray = when {
-            trimmed.startsWith("[") -> org.json.JSONArray(trimmed)
-            trimmed.startsWith("{") -> {
-                val obj = org.json.JSONObject(trimmed)
-                when {
-                    obj.has("pigmi") -> obj.getJSONArray("pigmi")
-                    obj.has("accounts") -> obj.getJSONArray("accounts")
-                    obj.has("data") -> obj.getJSONArray("data")
-                    else -> org.json.JSONArray()
-                }
-            }
-            else -> return emptyList()
-        }
-
-        val list = mutableListOf<PigmiAccount>()
-        for (i in 0 until jsonArray.length()) {
-            val item = jsonArray.optJSONObject(i) ?: continue
-
-            val srNo = item.optInt("srNo", item.optInt("sr_no", item.optInt("id", 0)))
-            val name = item.optString("name", item.optString("customerName", item.optString("customer_name", ""))).trim()
-            val kannadaName = item.optString("kannadaName", item.optString("kannada_name", item.optString("nameKn", ""))).trim()
-
-            if (srNo <= 0 && name.isBlank()) continue
-
-            list.add(
-                PigmiAccount(
-                    id = 0L,
-                    srNo = srNo,
-                    name = name,
-                    phoneNumber = "",
-                    address = "",
-                    accountNumber = "",
-                    dailyAmount = "",
-                    kannadaName = kannadaName
-                )
-            )
-        }
-        return list
     }
 }

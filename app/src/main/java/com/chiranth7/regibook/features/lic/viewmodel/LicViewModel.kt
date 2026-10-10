@@ -56,27 +56,18 @@ class LicViewModel(
 
     fun syncPolicies(
         context: android.content.Context,
-        settingsManager: com.chiranth7.regibook.util.SettingsManager,
+        settingsManager: com.chiranth7.regibook.util.SettingsManager? = null,
         customUrl: String? = null,
         isSilent: Boolean = false
     ) {
         if (_isSyncing.value) return
         _isSyncing.value = true
         viewModelScope.launch {
-            // First ensure local and Firestore have initial seed if empty
             com.chiranth7.regibook.data.firebase.FirestoreSyncManager.initialSeedIfEmpty(context)
-
-            // Sync from Firestore first
             val firestoreCount = try {
                 com.chiranth7.regibook.data.firebase.FirestoreSyncManager.syncPoliciesFromCloud(context)
             } catch (_: Exception) { 0 }
 
-            // Then sync from legacy URL / GitHub fallback
-            val result = com.chiranth7.regibook.features.lic.sync.LicSyncManager.syncPolicies(
-                context = context,
-                settingsManager = settingsManager,
-                customUrl = customUrl
-            )
             _isSyncing.value = false
             if (!isSilent) {
                 if (firestoreCount > 0) {
@@ -85,17 +76,7 @@ class LicViewModel(
                         firestoreCount
                     )
                 } else {
-                    when (result) {
-                        is com.chiranth7.regibook.features.lic.sync.LicSyncManager.SyncResult.Success -> {
-                            _syncMessage.value = context.getString(
-                                com.chiranth7.regibook.R.string.sync_success,
-                                result.count
-                            )
-                        }
-                        is com.chiranth7.regibook.features.lic.sync.LicSyncManager.SyncResult.Error -> {
-                            _syncMessage.value = context.getString(com.chiranth7.regibook.R.string.sync_failed)
-                        }
-                    }
+                    _syncMessage.value = context.getString(com.chiranth7.regibook.R.string.sync_failed)
                 }
             }
         }

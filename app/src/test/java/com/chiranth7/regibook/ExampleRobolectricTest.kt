@@ -315,14 +315,14 @@ class ExampleRobolectricTest {
         message = "Failed to sync: Connection timeout",
         isError = true,
         page = "lic_register",
-        location = "LicSyncManager.kt:76 (LicSyncManager.syncPolicies)",
+        location = "FirestoreSyncManager.kt:82 (FirestoreSyncManager.syncPoliciesFromCloud)",
         isSentToRemote = false
     )
     val payloadJson = com.chiranth7.regibook.util.log.AppLogManager.buildDiscordPayload(context, entry)
     assertTrue(payloadJson.contains("embeds"))
     assertTrue(payloadJson.contains("LicSync"))
     assertTrue(payloadJson.contains("lic_register"))
-    assertTrue(payloadJson.contains("LicSyncManager.kt:76"))
+    assertTrue(payloadJson.contains("FirestoreSyncManager.kt:82"))
     assertTrue(payloadJson.contains("Connection timeout"))
 
     // Verify DISCORD_WEBHOOK_URL is configured via BuildConfig

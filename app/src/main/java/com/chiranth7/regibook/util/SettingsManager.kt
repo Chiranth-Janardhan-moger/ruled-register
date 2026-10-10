@@ -150,8 +150,8 @@ class SettingsManager(context: Context) {
         private const val KEY_NOTIFIED_POLICIES = "notified_policy_keys"
 
         const val DEFAULT_AGENT_CODE = "LIC0246463V"
-        const val DEFAULT_POLICY_SYNC_URL = "https://raw.githubusercontent.com/Chiranth-Janardhan-moger/ruled-register/main/policies-sync.json"
-        const val DEFAULT_PIGMI_SYNC_URL = "https://raw.githubusercontent.com/Chiranth-Janardhan-moger/ruled-register/main/pigmi-sync.json"
+        const val DEFAULT_POLICY_SYNC_URL = ""
+        const val DEFAULT_PIGMI_SYNC_URL = ""
 
         const val DEFAULT_FONT_SCALE = 1.0f
         const val MIN_FONT_SCALE = 0.85f

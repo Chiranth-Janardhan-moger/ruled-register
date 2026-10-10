@@ -16,3 +16,8 @@ app/build/
 *.keystore
 google-services.json
 app/google-services.json
+
+# Customer data JSON files
+policies-sync.json
+pigmi-sync.json
+app/src/main/assets/

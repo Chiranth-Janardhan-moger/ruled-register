@@ -75,18 +75,12 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Automatic default cloud sync in background (Firestore & Legacy Fallback)
+        // Automatic default cloud sync in background (Firebase Firestore)
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 com.chiranth7.regibook.data.firebase.FirestoreSyncManager.initialSeedIfEmpty(applicationContext)
                 com.chiranth7.regibook.data.firebase.FirestoreSyncManager.syncPoliciesFromCloud(applicationContext)
                 com.chiranth7.regibook.data.firebase.FirestoreSyncManager.syncPigmiFromCloud(applicationContext)
-            } catch (_: Exception) {}
-            try {
-                com.chiranth7.regibook.features.pigmi.sync.PigmiSyncManager.syncPigmi(applicationContext, app.settingsManager)
-            } catch (_: Exception) {}
-            try {
-                com.chiranth7.regibook.features.lic.sync.LicSyncManager.syncPolicies(applicationContext, app.settingsManager)
             } catch (_: Exception) {}
         }
 

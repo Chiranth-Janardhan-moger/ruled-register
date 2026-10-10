@@ -30,8 +30,7 @@ class DailyLicReminderWorker(
     override suspend fun doWork(): Result {
         return try {
             try {
-                val settingsManager = com.chiranth7.regibook.util.SettingsManager(context)
-                com.chiranth7.regibook.features.lic.sync.LicSyncManager.syncPolicies(context, settingsManager)
+                com.chiranth7.regibook.data.firebase.FirestoreSyncManager.syncPoliciesFromCloud(context)
             } catch (_: Exception) {}
             checkAndPostReminders(context)
             Result.success()
